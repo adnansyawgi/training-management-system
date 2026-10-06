@@ -1,0 +1,33 @@
+/* Training Management System shared application styles */
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.tms-brand-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  margin-bottom: 0.75rem;
+}
+
+.card {
+  border-radius: 0.75rem;
+}
+
+.form-label {
+  font-weight: 500;
+}
+
+.form-control,
+.btn {
+  min-height: 2.75rem;
+}
+
+#formMessage {
+  overflow-wrap: anywhere;
+}
+

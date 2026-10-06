@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create Participant Account | Training Management System</title>
+    <!-- Bootstrap delivery is centralized in config/ui.js. -->
+    <link href="<%= bootstrapCssUrl %>" rel="stylesheet"
+    integrity="<%= bootstrapCssIntegrity %>" crossorigin="anonymous">
+    <link href="<%= appCssUrl %>" rel="stylesheet">
+  </head>
+  <body class="bg-light">
+    <main class="container">
+      <div class="row justify-content-center min-vh-100 align-items-center py-5">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+          <div class="text-center mb-4">
+            <div class="tms-brand-icon" aria-hidden="true">&#127891;</div>
+            <h1 class="h4 mb-1">Training Management System</h1>
+          </div>
+          <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+              <h2 class="h5 mb-4">Create Participant Account</h2>
+              <div id="formMessage" class="alert d-none" role="alert" aria-live="polite">
+              </div>
+              <div id="successActions" class="d-none mb-3">
+                <a id="successLoginLink" href="<%= participantLoginUrl %>" class="btn btn-success w-100">Go to Login</a>
+              </div>
+              <form id="participantRegisterForm" novalidate>
+                <div class="mb-3">
+                  <label for="nricPassportNo" class="form-label">NRIC / Passport No. <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" id="nricPassportNo" name="nricPassportNo" maxlength="50" autocomplete="off" required>
+                <div class="invalid-feedback">NRIC / Passport No. is required and must not exceed 50 characters.</div>
+              </div>
+              <div class="mb-3">
+                <label for="name" class="form-label">Name <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control" id="name" name="name" maxlength="200" autocomplete="name" required>
+              <div class="invalid-feedback">Name is required and must not exceed 200 characters.</div>
+            </div>
+            <div class="mb-3">
+              <label for="email" class="form-label">Email Address <span class="text-danger">*</span>
+            </label>
+            <input type="email" class="form-control" id="email" name="email" maxlength="254" autocomplete="email" required>
+            <div class="invalid-feedback">Enter a valid email address.</div>
+          </div>
+          <div class="mb-3">
+            <label for="mobileNo" class="form-label">Mobile No. <span class="text-danger">*</span>
+          </label>
+          <input type="text" class="form-control" id="mobileNo" name="mobileNo" maxlength="30" autocomplete="tel" required>
+          <div class="invalid-feedback">Mobile No. is required and must not exceed 30 characters.</div>
+        </div>
+        <div class="mb-4">
+          <label for="password" class="form-label">Password <span class="text-danger">*</span>
+        </label>
+        <input type="password" class="form-control" id="password" name="password" minlength="12" autocomplete="new-password" required aria-describedby="passwordHelp">
+        <div id="passwordHelp" class="form-text">Minimum 12 characters with at least one uppercase letter, one lowercase letter, one number and one special character.</div>
+        <div id="passwordFeedback" class="invalid-feedback">Password does not meet the required policy.</div>
+      </div>
+      <div class="d-grid mb-3">
+        <button id="createAccountButton" type="submit" class="btn btn-primary">
+          <span id="createAccountSpinner" class="spinner-border spinner-border-sm me-2 d-none" aria-hidden="true">
+          </span>
+          <span id="createAccountButtonText">Create Account</span>
+        </button>
+      </div>
+      <div class="d-grid">
+        <a href="<%= participantLoginUrl %>" class="btn btn-outline-secondary">Back to Login</a>
+      </div>
+    </form>
+  </div>
+</div>
+</div>
+</div>
+</main>
+<script src="<%= participantRegisterJsUrl %>" defer>
+</script>
+</body>
+</html>
