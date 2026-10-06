@@ -34,3 +34,30 @@ Tests are in `tests/unit/ui/participant-register.test.js` and
 browser rendering, screen-reader behavior, and database-backed end-to-end
 registration were not tested. Formal review and release approvals remain
 separate from this implementation evidence.
+
+Participant role configuration
+------------------------------
+
+The initial participant role identifiers were defined on 7 October 2026 with
+user authorization from the documented SDD capabilities. The canonical initial
+values are recorded in `src/.env.example`; copy those three entries to
+`src/.env` and restart the server after changing them.
+
+| Permission | Meaning |
+| --- | --- |
+| `PROGRAM_READ` | Read published training programs and program details |
+| `REGISTRATION_CREATE_OWN` | Create registrations for the authenticated participant |
+| `REGISTRATION_READ_OWN` | Read the authenticated participant's registrations |
+| `REGISTRATION_CANCEL_OWN` | Cancel the authenticated participant's registrations subject to the approved cancellation rules |
+
+`OWN_PARTICIPANT_RESOURCES` limits participant resources to the authenticated
+participant. Program browsing uses `PROGRAM_READ`; program records do not need
+to be owned by that participant. Responsibilities are `VIEW_PROGRAMS`,
+`CREATE_OWN_REGISTRATIONS`, `VIEW_OWN_REGISTRATIONS`, and
+`CANCEL_OWN_REGISTRATIONS`. No administrative access is granted.
+
+WF-001 stores this role metadata at account creation. Future protected endpoints
+must enforce permissions, ownership and business rules on the server; defining
+these values does not implement those endpoints. Previously created accounts
+are not updated by changing the environment variables. Start the application
+from `src` using `npm.cmd start` so dotenv loads `src/.env`.
