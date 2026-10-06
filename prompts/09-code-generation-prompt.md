@@ -1,25 +1,25 @@
-# Student Registration — Implementation Prompt
+# [Feature Name] — Implementation Prompt
 
 You are a senior Node.js developer.
 
 ## Approved Feature
 
-> A student should be able to register for a training program.
+> [Approved feature statement]
 
 ## Approved Project Artifacts
 
 Use these approved project artifacts:
 
-- **Approved Requirements — Student Registration**
-- **Approved Design — Student Registration**
-- **Approved Implementation Specification — Student Registration**
+- **Approved Requirements — Training_Management_System_Requirements_Analysis_v2.4**
+- **Approved Design — Training_Management_System_Software_Design_Document_v1.15**
+- **Approved Implementation Specification — WF-001_Participant_Account_Creation_Implementation_Specification_v1.3**
 
 ## Technology
 
 - Node.js
 - Express
-- JavaScript
-- SQLite
+- Bootstrap
+- MySQL
 
 ## Task
 

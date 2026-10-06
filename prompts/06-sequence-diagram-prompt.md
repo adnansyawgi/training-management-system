@@ -9,13 +9,16 @@ You are a Senior Software Architect.
 Use:
 
 **Requirements Analysis:**  
-`Training_Management_System_Requirements_Analysis_v1.4`
+`Training_Management_System_Requirements_Analysis_v2.4`
 
 **Software Design:**  
-`<SOFTWARE_DESIGN_FILE_NAME>`
+`Training_Management_System_Software_Design_Document_v1.15`
 
 **Architecture Diagram:**  
-`<ARCHITECTURE_DIAGRAM_FILE_NAME>`
+`Figure_3-1_System_Architecture_Overview.png`
+`Figure_3-2_Application_Layer_Architecture.png`
+`Figure_3-3_Functional_Component_Architecture`
+`Figure_3-4_Registration_and_Notification_Architecture`
 
 ## Task
 
