@@ -8,5 +8,8 @@ router.get(ui.participantRegistrationUrl, (req, res) => {
 router.get(ui.participantLoginUrl, (req, res) => {
   res.render('auth/participant-login', { ...ui });
 });
+router.get(ui.systemAdministratorBootstrapUrl, (req, res) => {
+  res.render('auth/system-administrator-bootstrap', { ...ui });
+});
 
 module.exports = router;

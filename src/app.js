@@ -18,5 +18,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(publicUiRoutes);
 app.use('/api/v1/auth', participantAuthRoutes);
 app.use('/api/v1', assemble(bindings));
+app.use('/api/v1', require('./system-administrator-bootstrap.composition').assemble(require('./system-administrator-bootstrap.bindings')));
 app.use(errorHandler);
 module.exports = app;

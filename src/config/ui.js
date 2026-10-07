@@ -8,5 +8,8 @@ module.exports = Object.freeze({
   appCssUrl: '/css/app.css',
   participantRegisterJsUrl: '/js/participant-register.js',
   participantLoginJsUrl: '/js/participant-login.js',
-  programListUrl: '/programs'
+  programListUrl: '/programs',
+  systemAdministratorBootstrapUrl: '/admin/bootstrap',
+  administrativeLoginUrl: '/admin/login',
+  systemAdministratorBootstrapJsUrl: '/js/system-administrator-bootstrap.js'
 });

@@ -285,3 +285,101 @@ already exist. The suite creates a fresh schema, runs both migrations and uses
 failure-injection triggers. Use a disposable instance with permissions to create
 the schema and triggers; remove that instance after testing. These test settings
 are separate from the application's `DB_*` configuration.
+
+WF-003 System Administrator Bootstrap
+-------------------------------------
+
+Implemented from the WF-003 backend v1.2 and UI v1.4 implementation documents
+and WF-003 implementation specification v1.3. Open `/admin/bootstrap` to create
+the initial eligible System Administrator. The public API is
+`POST /api/v1/auth/system-admin/bootstrap` and accepts only:
+
+```json
+{
+  "staticAdministrationKey": "<deployment-key>",
+  "username": "administrator-entered-username",
+  "name": "Administrator Name",
+  "email": "administrator@example.test",
+  "password": "<password-meeting-creation-policy>"
+}
+```
+
+Username is required, administrator-entered and unique; it is not derived from
+email or name. The server generates `A-<ULID>`, assigns canonical
+`SYSTEM_ADMINISTRATOR` role and ACTIVE status, and hashes the password with
+Argon2id. Username/name/email limits are 100/200/254 characters. Password uses
+the existing creation policy: at least 12 characters with uppercase, lowercase,
+digit and non-alphanumeric character.
+
+### WF-003 configuration
+
+Set `STATIC_ADMINISTRATION_KEY` to a unique deployment-secret value in `src/.env`
+or the deployment secret store. Use the random generation command in the session
+setup section to generate a separate key; do not reuse `SESSION_SECRET`.
+Missing deployment configuration fails closed with sanitized 500. When a key
+is configured, missing/invalid submitted keys return generic 401.
+
+Copy these approved initial role defaults from `.env.example` to `src/.env`:
+
+```dotenv
+SYSTEM_ADMINISTRATOR_PERMISSIONS_JSON='["ADMIN_USER_CREATE","ADMIN_USER_READ","ADMIN_USER_UPDATE"]'
+SYSTEM_ADMINISTRATOR_ACCESS_SCOPE_JSON='["ALL_ADMINISTRATIVE_USERS"]'
+SYSTEM_ADMINISTRATOR_RESPONSIBILITIES_JSON='["MANAGE_ADMINISTRATIVE_USERS"]'
+```
+
+The configured reserved audit actor must already exist. Restart the application
+after configuration changes. No WF-003 migration is required: the existing
+`users` and `audit_records` schema supports bootstrap, and the concurrency gate
+uses MySQL advisory locks. Existing WF-002 startup/session prerequisites still
+apply. Static administration keys and actual session secrets must remain out of
+source control; the example configuration contains empty secret placeholders.
+
+### WF-003 consistency, audit and navigation
+
+A database-scoped MySQL advisory lock covers the eligibility check and the
+account/audit transaction, including the case where no active administrator
+row exists. Bootstrap is allowed only when no ACTIVE SYSTEM_ADMINISTRATOR
+exists. The reserved DISABLED/SYSTEM actor does not block bootstrap. A lock
+acquisition failure returns sanitized 500; a connection whose lock cannot be
+released is discarded rather than returned to the pool.
+
+Duplicate username/email and an existing active administrator return sanitized
+409. Exact unique-index names from v1.0 are used; arbitrary duplicate values are
+never treated as constraint names. Generated account-identifier collisions retry
+at most three times. All successful account/audit writes use one connection and
+transaction; failures roll back. Unsafe numeric response IDs fail before commit.
+
+The reserved technical actor attributes the successful `ACCOUNT_CREATED` event
+for entity `SYSTEM_ADMINISTRATOR_ACCOUNT`; scope is `ALL_ADMINISTRATIVE_USERS`
+and classification is `PERSONAL_DATA`. Rejected 401/409 outcomes produce a
+separate `BOOTSTRAP_REJECTED` / `FAILURE` event with reference `ANONYMOUS` after
+any bootstrap transaction is rolled back. No submitted key, password or hash
+is stored in audit rows or returned/logged. Failed rejection-audit persistence
+returns sanitized 500 rather than claiming a fully audited rejection.
+
+Success returns exactly
+`{ userId, accountIdentifier, username, role, accountStatus, createdAt }`
+with HTTP 201. No participant profile, session cookie or notification is
+created. The browser clears both secrets and navigates to `/admin/login`.
+That is the approved future WF-004 destination and currently returns 404;
+WF-004 is not implemented as part of bootstrap.
+
+The advisory-lock gate, duplicate username/email mapping, technical audit actor,
+ACTIVE role defaults and UI URLs were explicitly approved during implementation.
+
+### WF-003 tests
+
+Verification on 7 October 2026: **26 suites and 216 tests passed**, including
+both WF-002 and WF-003 isolated MySQL suites. Concurrent bootstrap returned one
+201 and one 409 with one committed active administrator; injected user/audit
+failures left no partial account. The application database was not modified.
+`git diff --check` passed.
+
+Run `npm.cmd test` from `src` for unit/API/DOM tests. Isolated MySQL verification
+is enabled with `WF003_TEST_DB_HOST`, `WF003_TEST_DB_PORT`,
+`WF003_TEST_DB_USER`, `WF003_TEST_DB_PASSWORD`, and `WF003_TEST_DB_NAME`.
+Use a disposable instance and a fresh database named
+`tms_wf003_<unique-name>_test`; the suite refuses an existing database. It applies
+the existing migrations only in the fresh test schema, injects account/audit
+failures, and checks concurrent bootstrap, duplicates, credential hashing,
+rejection audit and the absence of participant profiles and sessions.
