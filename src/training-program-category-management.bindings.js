@@ -1,0 +1,12 @@
+const pool=require('./config/database');
+const {errors}=require('./auth/authentication-errors');
+const {sessions}=require('./participant-authentication.bindings');
+const {makeManagementRepository}=require('./repositories/training-program-category-management.repository');
+const {makeAdministrativeUserRepository}=require('./repositories/administrative-user-creation.repository');
+const {makeSessionSecurity}=require('./middleware/session-security');
+const audit=require('./repositories/audit.repository');
+const repository=makeManagementRepository({pool,errors});
+module.exports={repository,transactions:repository,authorization:makeAdministrativeUserRepository({pool,errors,role:'TRAINING_ADMINISTRATOR'}),
+  audit:{changed:audit.createManagementAudit},clock:{now:()=>new Date()},
+  security:makeSessionSecurity({sessions,errors,audit:{csrfRejected:(principal,context)=>audit.createCsrfRejectionAudit(pool,principal,context,{entityType:'TRAINING_PROGRAM_CATEGORY_MANAGEMENT',accessScope:'ALL_TRAINING_OPERATIONS'})}}),
+  requestContext:req=>({principal:req.principal,sessionId:req.authenticatedSessionId,correlationId:req.correlationId,ipAddress:req.ip,userAgent:req.get('user-agent')})};

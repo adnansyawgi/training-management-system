@@ -508,8 +508,8 @@ TRAINING_ADMINISTRATOR and TRAINER accounts can authenticate. Success returns
 exactly `{ userId, role, status, expiresAt }` with HTTP 200 and a signed HttpOnly,
 SameSite=Lax cookie (Secure according to existing deployment configuration).
 The browser redirects by the canonical response role: Training Administrator to
-`/admin/programs`, Trainer to `/trainer/programs`. These destination pages are
-reserved for their separate workflows and currently return 404. WF-006 provides
+`/admin/programs`, Trainer to `/trainer/programs`. WF-011 implements the Training Administrator destination. The Trainer destination
+remains reserved for its separate workflow and currently returns 404. WF-006 provides
 login and authentication, without implementing those pages.
 
 The shared authentication transaction commits successful-login state, session
@@ -836,3 +836,55 @@ Verification on 7 October 2026: **57 suites and 605 tests passed**, including
 live isolated MySQL WF-002 through WF-010 suites. The application database was
 not modified and no real email was sent. The disposable test container was
 removed. `git diff --check` passed.
+
+
+WF-011 Training Program & Category Management
+--------------------------------------------
+
+Sign in as a **Training Administrator** at `/staff/login`, then open
+`/admin/programs` or `/admin/categories`. System Administrators, Trainers and
+Participants cannot use these pages or their write APIs.
+
+Implemented from the WF-011 backend v1.2 and UI v1.4 documents with the approved
+bindings. No additional migration is required: apply existing migrations v1.0
+through v1.3. The management pages render server-paginated tables (20 records by
+default; maximum 100), category selectors and ACTIVE Trainer selectors (100 per
+lookup page). No new list or lookup APIs were introduced.
+
+- `POST /api/v1/admin/programs` creates a program; omitted capacity defaults to 20.
+- `PUT /api/v1/admin/programs/:programId` requires every non-optional mutable
+  field. Code and creation timestamp are immutable. Both responses contain
+  `{program}` with the 25 public detail fields plus `trainerUserId`.
+- `POST /api/v1/admin/categories` defaults omitted status to ACTIVE and returns
+  the six category fields, including creation timestamp.
+- `PUT /api/v1/admin/categories/:categoryId` requires name and status and returns
+  the five category fields without creation timestamp. Duplicate category names
+  and program codes return HTTP 409.
+
+All writes require a valid session and `X-CSRF-Token`; authorization and session
+validity are rechecked inside the transaction. Each write and its
+PROGRAM_CREATED/UPDATED or CATEGORY_CREATED/UPDATED audit commit together with
+ALL_TRAINING_OPERATIONS scope. Audit failure rolls back the business change.
+There is no hard delete or program-change notification.
+
+Allowed transitions are DRAFT ? OPEN/CANCELLED, OPEN ? CLOSED/CANCELLED and
+CLOSED ? COMPLETED/CANCELLED. Terminal statuses cannot reopen. Saving the same
+status is allowed. Capacity must be positive and cannot fall below active
+registrations. Categories must exist; assigned Trainers must be ACTIVE.
+Registration opening precedes closing, and closing cannot follow program start.
+
+Forms display schedule/window inputs in `BUSINESS_TIMEZONE` (default
+`Asia/Kuala_Lumpur`) and convert registration windows to explicit UTC timestamps
+before sending them. The API validates trainer/venue overlaps and checks enrolled
+participants' other active registrations when rescheduling. Management writes
+use a database-scoped MySQL advisory lock; updates lock participants before the
+program to coordinate with registration/cancellation and retry changed participant
+sets or database deadlocks up to three attempts. MySQL deployments must permit
+`GET_LOCK` and `RELEASE_LOCK`.
+
+Verification on 7 October 2026: **59 suites and 627 tests passed**, including
+live isolated MySQL WF-002 through WF-011 suites. WF-011 checks cover access
+control, CSRF, DTOs, defaults, duplicate handling, lifecycle and capacity rules,
+trainer/participant conflicts, concurrent creation, escaped management pages,
+business-time conversion and rollback on audit failure. Tests use disposable
+databases and do not send real email.

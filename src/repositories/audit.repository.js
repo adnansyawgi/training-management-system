@@ -112,15 +112,15 @@ async function createAdministrativeUserAudit(connection, event) {
   ]);
 }
 
-async function createCsrfRejectionAudit(connection, principal, context) {
+async function createCsrfRejectionAudit(connection, principal, context, target = {}) {
   await connection.execute(`INSERT INTO audit_records (
     event_timestamp, actor_user_id, actor_role, action, entity_type, entity_id, result,
     change_summary, previous_value, new_value, access_scope, data_classification,
     ip_address, user_agent, correlation_id
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
-    new Date(), principal.userId, principal.role, 'CSRF_REJECTED', principal.role === 'PARTICIPANT' ? 'REGISTRATION' : 'ADMINISTRATIVE_USER_ACCOUNT',
+    new Date(), principal.userId, principal.role, 'CSRF_REJECTED', target.entityType || (principal.role === 'PARTICIPANT' ? 'REGISTRATION' : 'ADMINISTRATIVE_USER_ACCOUNT'),
     'REQUEST', 'FAILURE', 'Authenticated request rejected by CSRF validation.', null, null,
-    principal.role === 'PARTICIPANT' ? 'PARTICIPANT' : 'ALL_ADMINISTRATIVE_USERS', 'PERSONAL_DATA', context.ipAddress || null,
+    target.accessScope || (principal.role === 'PARTICIPANT' ? 'PARTICIPANT' : 'ALL_ADMINISTRATIVE_USERS'), 'PERSONAL_DATA', context.ipAddress || null,
     context.userAgent?.slice(0, 500) || null, context.correlationId || null
   ]);
 }
@@ -140,4 +140,16 @@ module.exports.createRegistrationCancelledAudit = async (connection, event) => {
     VALUES (?,?,'PARTICIPANT','REGISTRATION_CANCELLED','REGISTRATION',?,'SUCCESS','Participant registration cancelled.',?,?,'PARTICIPANT','PERSONAL_DATA',?,?,?)`,
   [event.now,event.context.principal.userId,event.row.registration_id,JSON.stringify({status:'REGISTERED'}),JSON.stringify({status:'CANCELLED'}),
     event.context.ipAddress || null,event.context.userAgent?.slice(0,500) || null,event.context.correlationId || null]);
+};
+module.exports.createManagementAudit = async (connection, event) => {
+  const program=event.type==='PROGRAM';
+  const programFields=['code','name','description','objectives','target_audience','prerequisites','category_id','trainer_user_id','training_date','start_time','end_time','venue','delivery_mode','capacity','registration_open_at','registration_close_at','status','cancellation_policy_reference','certificate_eligibility_criteria','certificate_type'];
+  const values=row=>program ? Object.fromEntries(programFields.map(key=>[key,row[key]]))
+    : {name:row.name,description:row.description,status:row.status};
+  await connection.execute(`INSERT INTO audit_records (event_timestamp,actor_user_id,actor_role,action,entity_type,entity_id,result,
+    change_summary,previous_value,new_value,access_scope,data_classification,ip_address,user_agent,correlation_id)
+    VALUES (?,?,'TRAINING_ADMINISTRATOR',?,?,?,'SUCCESS',?,?,?,'ALL_TRAINING_OPERATIONS','PERSONAL_DATA',?,?,?)`,
+  [event.now,event.context.principal.userId,event.type+'_'+(event.before?'UPDATED':'CREATED'),program?'TRAINING_PROGRAM':'PROGRAM_CATEGORY',
+    String(program?event.saved.program_id:event.saved.category_id),program?'Training program saved.':'Program category saved.',
+    event.before?JSON.stringify(values(event.before)):null,JSON.stringify(values(event.saved)),event.context.ipAddress || null,event.context.userAgent?.slice(0,500) || null,event.context.correlationId || null]);
 };

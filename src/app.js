@@ -35,5 +35,8 @@ app.use(require('./routes/participant-registration-ui.routes').makePageRouter(re
 const cancellation = require('./participant-registration-cancellation.bindings');
 app.use('/api/v1', require('./participant-registration-cancellation.composition').assemble(cancellation));
 app.use(require('./routes/my-registrations-ui.routes').makePageRouter(cancellation));
+const management=require('./training-program-category-management.bindings');
+app.use('/api/v1',require('./training-program-category-management.composition').assemble(management));
+app.use(require('./routes/training-management-ui.routes').makePageRouter(management));
 app.use(errorHandler);
 module.exports = app;

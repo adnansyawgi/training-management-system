@@ -26,5 +26,7 @@ module.exports = Object.freeze({
   participantRegistrationJsUrl: '/js/participant-registration.js',
   myRegistrationsUrl: '/registrations',
   myRegistrationsJsUrl: '/js/my-registrations.js',
-  businessTimeJsUrl: '/js/business-time.js'
+  businessTimeJsUrl: '/js/business-time.js',
+  categoryManagementUrl: '/admin/categories',
+  programManagementJsUrl: '/js/program-management.js'
 });
