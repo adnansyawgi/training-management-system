@@ -1,10 +1,19 @@
 async function createParticipantSelfRegistrationAudit(connection, context) {
+  // The initial migration generates this identity. Deployment must bind the
+  // provisioned actor explicitly; other disabled administrators are not actors.
+  const actorIdentifier = process.env.SYSTEM_AUDIT_ACTOR_ACCOUNT_IDENTIFIER;
+  if (!actorIdentifier || !actorIdentifier.trim()) {
+    const error = new Error('Reserved technical audit actor identity is not configured.');
+    error.code = 'AUDIT_ACTOR_CONFIGURATION_ERROR';
+    throw error;
+  }
   const [actors] = await connection.execute(`
     SELECT user_id FROM users
-    WHERE role_id = 'SYSTEM_ADMINISTRATOR'
+    WHERE account_identifier = ?
+      AND role_id = 'SYSTEM_ADMINISTRATOR'
       AND account_status = 'DISABLED'
       AND authentication_method = 'SYSTEM'
-    ORDER BY user_id ASC LIMIT 2`);
+    LIMIT 2`, [actorIdentifier.trim()]);
   if (actors.length !== 1) {
     const error = new Error('Exactly one reserved technical audit actor is required.');
     error.code = 'AUDIT_ACTOR_CONFIGURATION_ERROR';

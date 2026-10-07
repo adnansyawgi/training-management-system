@@ -61,3 +61,92 @@ must enforce permissions, ownership and business rules on the server; defining
 these values does not implement those endpoints. Previously created accounts
 are not updated by changing the environment variables. Start the application
 from `src` using `npm.cmd start` so dotenv loads `src/.env`.
+
+WF-001 implementation document alignment (7 October 2026)
+--------------------------------------------------------
+
+Reviewed the backend v1.3 and UI v1.4 documents in `docs/implementation-code`.
+The existing route, five-field validation, Argon2id hashing, role configuration,
+transaction service and registration UI are retained. The success controller
+now explicitly returns only the three approved response fields. Duplicate-key
+classification matches only the exact unique index names declared by the v1.0
+migration, including MySQL table-qualified names; unknown keys remain sanitized
+500 failures. Malformed JSON returns a fixed 400 message with correlation.
+
+Set `SYSTEM_AUDIT_ACTOR_ACCOUNT_IDENTIFIER` in deployment configuration to the
+exact `account_identifier` of the reserved actor already provisioned by the
+initial migration. The audit repository checks that identity and its
+SYSTEM_ADMINISTRATOR/DISABLED/SYSTEM characteristics. An absent or invalid
+binding fails registration and rolls back its transaction. No actor is selected
+solely by role/status, and no applied migration was edited.
+
+Added Jest service, API, duplicate-classification and audit-binding tests.
+Verification: `npm.cmd test` from `src` passed **8 suites and 63 tests** on
+7 October 2026; `git diff --check` passed.
+Service tests use mocks to verify transaction ownership, rollback calls,
+duplicate handling and bounded identifier regeneration. These are not evidence
+of actual MySQL rollback or concurrency. Live schema/index verification,
+isolated MySQL repository/rollback/concurrent registration tests, confirmation
+of the reserved actor binding and canonical audit conventions, and the existing
+WF-002 login navigation gap remain integration/release evidence requirements.
+The DOCX approval/test-status records have not been promoted to PASS.
+
+Reserved technical audit actor configuration
+--------------------------------------------
+
+WF-001 requires a reserved technical actor for its mandatory account-creation
+audit record. `AUDIT_ACTOR_CONFIGURATION_ERROR` means the actor identifier is
+missing/empty in the running configuration or does not match exactly one user
+with the required SYSTEM_ADMINISTRATOR/DISABLED/SYSTEM characteristics.
+Registration rolls back when this audit prerequisite fails.
+
+The initial migration, `db/migrations/v1.0_participant-account-schema.sql`,
+inserts a user named `System Audit Actor`. Its `account_identifier` is generated
+when the INSERT executes using:
+
+```sql
+CONCAT('A-', REPLACE(UUID(), '-', ''))
+```
+
+The actual identifier is therefore stored in the database; it is not a fixed
+value in the migration file. Run this read-only query in the application's
+configured database:
+
+```sql
+SELECT user_id, account_identifier, name
+FROM users
+WHERE role_id = 'SYSTEM_ADMINISTRATOR'
+  AND account_status = 'DISABLED'
+  AND authentication_method = 'SYSTEM';
+```
+
+Verify the reserved `System Audit Actor` row, then copy its exact
+`account_identifier` into `src/.env`:
+
+```dotenv
+SYSTEM_AUDIT_ACTOR_ACCOUNT_IDENTIFIER=A-<actual-database-value>
+```
+
+Replace the placeholder with the returned identifier. Restart the server from
+`src` using `npm.cmd start`, then retry registration. `.env.example` documents
+the setting; the running application needs it in `.env` or its deployment
+environment.
+
+If the query returns no rows, provision the reserved actor through the
+controlled bootstrap process. If it returns several rows, verify the intended
+reserved identity rather than choosing an arbitrary administrator. Do not rerun
+the entire schema migration against an initialized database.
+
+For a deployment where the actor has not yet been provisioned, the following
+opaque identifier was proposed as an explicit provisioning value:
+
+```dotenv
+SYSTEM_AUDIT_ACTOR_ACCOUNT_IDENTIFIER=A-7b8f24c6d9314ea2a056cf193e82bd47
+```
+
+This is a proposal, not evidence of an existing database row. Provisioning must
+use that same value for `users.account_identifier`, ensure it is unique, and
+preserve the reserved actor's non-interactive configuration. Setting the
+environment variable alone does not create the actor. When the initial
+migration has already provisioned an actor, use its existing generated value
+instead; do not edit an applied migration or replace its identity.

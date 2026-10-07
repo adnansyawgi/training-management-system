@@ -2,6 +2,15 @@ function errorHandler(error, req, res, next) {
   if (res.headersSent) return next(error);
 
   const correlationId = req.correlationId || null;
+  if (error.type === 'entity.parse.failed') {
+    return res.status(400).json({
+      code: 'VALIDATION_ERROR',
+      message: 'A valid JSON request body is required.',
+      details: null,
+      timestamp: new Date().toISOString(),
+      correlationId
+    });
+  }
   if (error.status === 400) {
     return res.status(400).json({
       code: error.code || 'VALIDATION_ERROR',
