@@ -2,7 +2,7 @@ function makeNotificationWorker({ repository, mail, now = () => new Date() }) {
   return { async runOnce() {
     /** @type {{payload: string | object, recipient: string, subject: string, outbox_id: string | number} | null} */
     const row = await repository.claim(now());
-    if (!row) return false;
+    if (!row) { return false; }
     let success = false;
     try {
       const payload = typeof row.payload === 'string' ? JSON.parse(row.payload) : row.payload;

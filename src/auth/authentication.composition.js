@@ -22,10 +22,10 @@ function assembleAuthentication(bindings, policy) {
     'security.recordRoleRejection', 'security.recordSuccess', 'security.recordUnknownAttempt',
     'sessions.prepare', 'users.findForAuthentication'
   ];
-  if (policy.participant) required.push('participants.findUniqueByUser');
+  if (policy.participant) { required.push('participants.findUniqueByUser'); }
   for (const name of required) {
     const [group, method] = name.split('.');
-    if (typeof dependencies[group]?.[method] !== 'function') throw new Error('Missing approved adapter: ' + name);
+    if (typeof dependencies[group]?.[method] !== 'function') { throw new TypeError('Missing approved adapter: ' + name); }
   }
   const sharedLogin = makeAuthenticationService(dependencies);
   const service = { login: (input, context) => sharedLogin(input, context, policy) };

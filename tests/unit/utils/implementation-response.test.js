@@ -16,3 +16,12 @@ test('projects only approved fields and UTC expiry', () => {
   const transport = makeResponseTransport(makeResponseCodec(), { login: ['userId', 'participantId', 'role', 'status', 'expiresAt'] });
   expect(transport.encode('login', { userId: '12', participantId: '34', role: 'PARTICIPANT', status: 'ACTIVE', expiresAt: new Date('2026-10-07T01:00:00Z'), sessionId: 'secret' })).toEqual({ userId: 12, participantId: 34, role: 'PARTICIPANT', status: 'ACTIVE', expiresAt: '2026-10-07T01:00:00.000Z' });
 });
+
+test('approved decimal-string fallback preserves numeric IDs and large IDs without rounding', () => {
+  const codec = makeResponseCodec({ decimalStringResponseApproved: true });
+  expect(codec.id('12')).toBe(12);
+  expect(codec.id(String(Number.MAX_SAFE_INTEGER))).toBe(Number.MAX_SAFE_INTEGER);
+  expect(codec.id('9007199254740993')).toBe('9007199254740993');
+  expect(codec.id('9223372036854775807')).toBe('9223372036854775807');
+  expect(() => codec.id('9223372036854775808')).toThrow();
+});

@@ -2,6 +2,10 @@ const { createHash } = require('node:crypto');
 const { ulid } = require('ulid');
 const { positiveId } = require('../validators/implementation-validation');
 
+async function hasActiveSystemAdministrator(connection) {
+    const [rows] = await connection.execute("SELECT user_id FROM users WHERE role_id = 'SYSTEM_ADMINISTRATOR' AND account_status = 'ACTIVE' LIMIT 1");
+    return rows.length > 0;
+  }
 function makeBootstrapRepository({ pool, errors, generateIdentifier = () => `A-${ulid()}` }) {
   async function withExclusiveEligibility(callback) {
     const connection = await pool.getConnection();
@@ -37,14 +41,11 @@ function makeBootstrapRepository({ pool, errors, generateIdentifier = () => `A-$
         } catch { discard = true; }
       }
       // Advisory locks survive transactions. Never return a locked connection to the pool.
-      if (discard) connection.destroy();
-      else connection.release();
+      if (discard) { connection.destroy(); }
+      else { connection.release(); }
     }
   }
-  async function hasActiveSystemAdministrator(connection) {
-    const [rows] = await connection.execute("SELECT user_id FROM users WHERE role_id = 'SYSTEM_ADMINISTRATOR' AND account_status = 'ACTIVE' LIMIT 1");
-    return rows.length > 0;
-  }
+
   async function createWithIdentifierRetry(connection, user) {
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const accountIdentifier = generateIdentifier();
@@ -62,10 +63,10 @@ function makeBootstrapRepository({ pool, errors, generateIdentifier = () => `A-$
         return { userId: positiveId(result.insertId), accountIdentifier };
       } catch (error) {
         const match = error.code === 'ER_DUP_ENTRY' && /for key ['`]([^'`]+)['`]\s*$/i.exec(error.sqlMessage || error.message || '');
-        const key = match && match[1];
+        const key = match?.[1];
         // Verified names from v1.0; do not classify duplicate VALUES as key names.
-        if (['username', 'users.username', 'email', 'users.email'].includes(key)) throw errors.conflict();
-        if (['account_identifier', 'users.account_identifier'].includes(key) && attempt < 2) continue;
+        if (['username', 'users.username', 'email', 'users.email'].includes(key)) { throw errors.conflict(); }
+        if (['account_identifier', 'users.account_identifier'].includes(key) && attempt < 2) { continue; }
         throw error;
       }
     }

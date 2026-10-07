@@ -23,7 +23,7 @@ beforeEach(() => {
   participants.findByNricPassportNo.mockResolvedValue(null);
   users.createUser.mockResolvedValue(10);
   participants.createParticipant.mockResolvedValue(11);
-  roles.resolveParticipantRoleDefaults.mockResolvedValue({ permissions: ['PROGRAM_READ'], accessScope: ['OWN'], permittedResponsibilities: ['VIEW'] });
+  roles.resolveParticipantRoleDefaults.mockReturnValue({ permissions: ['PROGRAM_READ'], accessScope: ['OWN'], permittedResponsibilities: ['VIEW'] });
   hasher.hashPassword.mockResolvedValue('argon2-hash');
   identifiers.generateParticipantIdentifiers.mockImplementation(() => ({ accountIdentifier: `P-${identifiers.generateParticipantIdentifiers.mock.calls.length}`, username: 'participant-generated' }));
 });
@@ -33,7 +33,7 @@ test('commits user, profile and mandatory audit on one connection', async () => 
   expect(result).toEqual({ participantId: 11, status: 'ACTIVE', createdAt: expect.any(String) });
   expect(users.createUser).toHaveBeenCalledWith(connection, expect.objectContaining({ passwordHash: 'argon2-hash', permissions: ['PROGRAM_READ'], accountStatus: 'ACTIVE' }));
   expect(users.createUser.mock.calls[0][1]).not.toHaveProperty('password');
-  expect(roles.resolveParticipantRoleDefaults).toHaveBeenCalledWith(connection);
+  expect(roles.resolveParticipantRoleDefaults).toHaveBeenCalledWith();
   expect(participants.createParticipant).toHaveBeenCalledWith(connection, expect.objectContaining({ userId: 10 }));
   expect(audit.createParticipantSelfRegistrationAudit).toHaveBeenCalledWith(connection, expect.objectContaining({ participantId: 11, userId: 10, correlationId: 'test' }));
   expect(audit.createParticipantSelfRegistrationAudit.mock.invocationCallOrder[0]).toBeLessThan(connection.commit.mock.invocationCallOrder[0]);
@@ -51,7 +51,8 @@ test.each(['email', 'nric'])('rejects duplicate %s before starting a transaction
 test.each(['participant', 'audit', 'role', 'commit'])('rolls back on %s failure and releases the connection', async stage => {
   const operation = { participant: participants.createParticipant, audit: audit.createParticipantSelfRegistrationAudit, role: roles.resolveParticipantRoleDefaults, commit: connection.commit }[stage];
   const error = new Error('injected failure');
-  operation.mockRejectedValueOnce(error);
+  if (stage === 'role') operation.mockImplementationOnce(() => { throw error; });
+  else operation.mockRejectedValueOnce(error);
   await expect(create(input)).rejects.toBe(error);
   expect(connection.rollback).toHaveBeenCalledTimes(1);
   expect(connection.release).toHaveBeenCalledTimes(1);

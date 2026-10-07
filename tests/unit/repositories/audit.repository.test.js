@@ -29,3 +29,23 @@ test('selects the exact reserved identity and audits only account references', a
   expect(values[1]).toBe(9);
   expect(JSON.parse(values[9])).toEqual({ userId: 10, participantId: 11 });
 });
+
+test.each([
+  ['SYSTEM_ADMINISTRATOR', 'SUCCESS', 'SYSTEM_ADMINISTRATOR', 'System Administrator', 'ALL_ADMINISTRATIVE_USERS'],
+  ['SYSTEM_ADMINISTRATOR', 'FAILURE', null, 'System Administrator', 'ALL_ADMINISTRATIVE_USERS'],
+  ['STAFF', 'SUCCESS', 'TRAINING_ADMINISTRATOR', 'Training Administrator', 'ALL_TRAINING_OPERATIONS'],
+  ['STAFF', 'SUCCESS', 'TRAINER', 'Trainer', 'ASSIGNED_PROGRAMS'],
+  ['STAFF', 'FAILURE', null, 'Staff', 'STAFF'],
+  ['PARTICIPANT', 'SUCCESS', 'PARTICIPANT', 'Participant', 'PARTICIPANT'],
+  ['PARTICIPANT', 'FAILURE', null, 'Participant', 'PARTICIPANT']
+])('authentication audit retains identity and scope for %s/%s/%s', async (authenticationRole, outcome, role, label, scope) => {
+  process.env.SYSTEM_AUDIT_ACTOR_ACCOUNT_IDENTIFIER = 'A-reserved';
+  const connection = { execute: jest.fn().mockResolvedValue([[{ user_id: 9 }]]) };
+  const user = role ? { user_id: 10, role_id: role } : null;
+  await require('../../../src/repositories/audit.repository').createAuthenticationAudit(
+    { connection, now: new Date() }, user, { authenticationRole }, outcome);
+  const values = connection.execute.mock.calls.at(-1)[1];
+  expect(values[7]).toBe(`${label} authentication ${outcome === 'SUCCESS' ? 'succeeded.' : 'was rejected.'}`);
+  expect(values[10]).toBe(scope);
+  expect(values[1]).toBe(outcome === 'SUCCESS' ? 10 : 9);
+});

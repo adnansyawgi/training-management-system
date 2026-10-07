@@ -4,7 +4,7 @@ const SERVER_CONTROLLED_FIELDS = new Set([
   'permissions', 'accessScope', 'permittedResponsibilities', 'username', 'accountIdentifier',
   'createdAt', 'updatedAt', 'roleAssignedAt'
 ]);
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const { validEmailShape } = require('./email-shape');
 
 function validateParticipantAccount(req, res, next) {
   const body = req.body;
@@ -14,7 +14,7 @@ function validateParticipantAccount(req, res, next) {
 
   const errors = [];
   for (const field of SERVER_CONTROLLED_FIELDS) {
-    if (Object.prototype.hasOwnProperty.call(body, field)) {
+    if (Object.hasOwn(body, field)) {
       errors.push({ field, message: `${field} is server controlled and must not be supplied.` });
     }
   }
@@ -33,11 +33,11 @@ function validateParticipantAccount(req, res, next) {
   validateRequiredString(errors, 'nricPassportNo', nricPassportNo, 50);
   validateRequiredString(errors, 'name', name, 200);
   validateRequiredString(errors, 'email', email, 254);
-  if (email && !EMAIL_PATTERN.test(email)) errors.push({ field: 'email', message: 'Email address must be valid.' });
+  if (email && !validEmailShape(email)) { errors.push({ field: 'email', message: 'Email address must be valid.' }); }
   validateRequiredString(errors, 'mobileNo', mobileNo, 30);
   validatePassword(errors, password);
 
-  if (errors.length) return next(createValidationError(errors));
+  if (errors.length) { return next(createValidationError(errors)); }
   req.validatedBody = { nricPassportNo, name, email, mobileNo, password };
   return next();
 }
@@ -47,17 +47,17 @@ function normalizeString(value) {
 }
 
 function validateRequiredString(errors, field, value, maxLength) {
-  if (!value) return errors.push({ field, message: `${field} is required.` });
-  if (value.length > maxLength) errors.push({ field, message: `${field} must not exceed ${maxLength} characters.` });
+  if (!value) { return errors.push({ field, message: `${field} is required.` }); }
+  if (value.length > maxLength) { errors.push({ field, message: `${field} must not exceed ${maxLength} characters.` }); }
 }
 
 function validatePassword(errors, password) {
-  if (!password) return errors.push({ field: 'password', message: 'password is required.' });
-  if (password.length < 12) errors.push({ field: 'password', message: 'Password must contain at least 12 characters.' });
-  if (!/[A-Z]/.test(password)) errors.push({ field: 'password', message: 'Password must contain at least one uppercase letter.' });
-  if (!/[a-z]/.test(password)) errors.push({ field: 'password', message: 'Password must contain at least one lowercase letter.' });
-  if (!/[0-9]/.test(password)) errors.push({ field: 'password', message: 'Password must contain at least one digit.' });
-  if (!/[^A-Za-z0-9]/.test(password)) errors.push({ field: 'password', message: 'Password must contain at least one non-alphanumeric character.' });
+  if (!password) { return errors.push({ field: 'password', message: 'password is required.' }); }
+  if (password.length < 12) { errors.push({ field: 'password', message: 'Password must contain at least 12 characters.' }); }
+  if (!/[A-Z]/.test(password)) { errors.push({ field: 'password', message: 'Password must contain at least one uppercase letter.' }); }
+  if (!/[a-z]/.test(password)) { errors.push({ field: 'password', message: 'Password must contain at least one lowercase letter.' }); }
+  if (!/\d/.test(password)) { errors.push({ field: 'password', message: 'Password must contain at least one digit.' }); }
+  if (!/[^A-Za-z\d]/.test(password)) { errors.push({ field: 'password', message: 'Password must contain at least one non-alphanumeric character.' }); }
 }
 
 function createValidationError(details) {

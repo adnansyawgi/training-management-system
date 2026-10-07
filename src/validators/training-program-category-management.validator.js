@@ -1,7 +1,7 @@
 const v = require('./implementation-validation');
-function safeId(value) { const id = v.positiveId(value); if (!Number.isSafeInteger(Number(id))) throw v.bad(); return id; }
-const bodyId = value => { if (typeof value !== 'number') throw v.bad(); return safeId(value); };
-const integerCapacity = value => { if (!Number.isInteger(value) || value < 1 || value > 2147483647) throw v.bad(); return value; };
+function safeId(value) { const id = v.positiveId(value); if (!Number.isSafeInteger(Number(id))) { throw v.bad(); } return id; }
+const bodyId = value => { if (typeof value !== 'number') { throw v.bad(); } return safeId(value); };
+const integerCapacity = value => { if (!Number.isInteger(value) || value < 1 || value > 2147483647) { throw v.bad(); } return value; };
 const fields = {
   name: v.text(200), description: v.text(65535, { bytes: true }), objectives: v.text(65535, { bytes: true }),
   targetAudience: v.text(500), prerequisites: v.nullableText(1000), categoryId: bodyId, trainerUserId: bodyId,

@@ -1,5 +1,5 @@
 const express = require('express');
-const path = require('path');
+const path = require('node:path');
 const publicUiRoutes = require('./routes/public-ui.routes');
 const participantAuthRoutes = require('./routes/participant-auth.routes');
 const correlationIdMiddleware = require('./middleware/correlation-id.middleware');

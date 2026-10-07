@@ -1,6 +1,15 @@
 'use strict';
 
-document.addEventListener('DOMContentLoaded', () => {
+function getControlledErrorMessage(response, data) {
+    if (response.status === 400) {
+      return data && typeof data.message === 'string' && data.message.trim() ? data.message : 'Please correct the information entered and try again.';
+    }
+    if (response.status === 409) {
+      return data && typeof data.message === 'string' && data.message.trim() ? data.message : 'An account already exists with the supplied unique information.';
+    } /* Never render server text for unexpected failures or unapproved statuses. */
+    return 'Unable to create the account. Please try again.';
+  }
+  document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('participantRegisterForm');
   if (!form) {
     return;
@@ -19,8 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const passwordPattern = {
     uppercase: /[A-Z]/,
     lowercase: /[a-z]/,
-    digit: /[0-9]/,
-    nonAlphanumeric: /[^A-Za-z0-9]/
+    digit: /\d/,
+    nonAlphanumeric: /[^A-Za-z\d]/
   };
   function setLoading(loading) {
     submitButton.disabled = loading;
@@ -67,22 +76,14 @@ document.addEventListener('DOMContentLoaded', () => {
     password.value = '';
     password.setCustomValidity('');
   }
-  function getControlledErrorMessage(response, data) {
-    if (response.status === 400) {
-      return data && typeof data.message === 'string' && data.message.trim() ? data.message : 'Please correct the information entered and try again.';
-    }
-    if (response.status === 409) {
-      return data && typeof data.message === 'string' && data.message.trim() ? data.message : 'An account already exists with the supplied unique information.';
-    } /* Never render server text for unexpected failures or unapproved statuses. */
-    return 'Unable to create the account. Please try again.';
-  }
+
   password.addEventListener('input', () => {
     validatePassword();
   });
   form.addEventListener('submit', async event => {
     event.preventDefault();
     // Also guard programmatic or repeated submissions while a request is pending.
-    if (submitButton.disabled) return;
+    if (submitButton.disabled) { return; }
     hideOutcome();
     if (!validateForm()) {
       return;

@@ -1,6 +1,6 @@
 const {positiveId}=require('../validators/implementation-validation');
 function makeCertificatePageRepository({pool,errors}){return {async read(principal,{programId,programPage,page}){
-  if(principal?.role!=='TRAINING_ADMINISTRATOR')throw errors.forbidden();const connection=await pool.getConnection();
+  if(principal?.role!=='TRAINING_ADMINISTRATOR'){ throw errors.forbidden(); }const connection=await pool.getConnection();
   try{
     await connection.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');await connection.query('START TRANSACTION WITH CONSISTENT SNAPSHOT, READ ONLY');
     const [actors]=await connection.execute("SELECT user_id FROM users WHERE user_id=? AND role_id='TRAINING_ADMINISTRATOR' AND role_name=role_id AND account_status='ACTIVE' AND (authentication_method IS NULL OR authentication_method<>'SYSTEM') AND (lockout_until IS NULL OR lockout_until<=UTC_TIMESTAMP())",[positiveId(principal.userId)]);

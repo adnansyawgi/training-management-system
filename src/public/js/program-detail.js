@@ -1,7 +1,7 @@
 'use strict';
 document.addEventListener('DOMContentLoaded', async () => {
   const root = document.querySelector('[data-program-id]');
-  if (!root) return;
+  if (!root) { return; }
   const field = id => document.getElementById(id);
   const message = field('pageMessage'), article = field('programArticle'), register = field('registerLink');
   const programId = root.dataset.programId;
@@ -11,8 +11,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       credentials: 'same-origin', headers: { Accept: 'application/json' }
     });
     if (response.status !== 200) {
-      show(response.status === 404 ? 'Training program was not found.' : response.status === 400
-        ? 'Invalid training program identifier.' : 'Unable to load program details.');
+      const messages = {404: 'Training program was not found.', 400: 'Invalid training program identifier.'};
+      show(messages[response.status] || 'Unable to load program details.');
       return;
     }
     const program = await response.json();

@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+require('dotenv').config({ path: require('node:path').join(__dirname, '.env') });
 const pool = require('./config/database');
 const { makeNotificationRepository } = require('./repositories/registration-notification.repository');
 const { makeNotificationWorker } = require('./jobs/notification-worker');
@@ -9,7 +9,7 @@ process.on('SIGTERM', () => { stopping = true; });
 async function main() {
   const worker = makeNotificationWorker({ repository: makeNotificationRepository({ pool }), mail: makeSmtpMail() });
   while (!stopping) {
-    try { if (await worker.runOnce()) continue; }
+    try { if (await worker.runOnce()) { continue; } }
     catch { console.error('Notification worker failed', { code: 'NOTIFICATION_STORE_ERROR' }); }
     await new Promise(resolve => setTimeout(resolve, 1000));
   }

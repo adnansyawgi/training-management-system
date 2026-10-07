@@ -28,10 +28,11 @@ function makeNotificationRepository({ pool }) {
     },
     async complete(row, now, success) {
       const failed = !success && row.attempt_count >= 4;
+      const failureStatus = failed ? 'FAILED' : 'PENDING';
       const next = !success && !failed ? new Date(now.getTime() + 60000 * 2 ** (row.attempt_count - 1)) : null;
       await pool.execute(`UPDATE notification_outbox SET status=?,next_attempt_at=?,last_error=?,updated_at=?
         WHERE outbox_id=? AND status='PROCESSING' AND attempt_count=?`,
-      [success ? 'SENT' : failed ? 'FAILED' : 'PENDING', next, success ? null : 'SMTP_DELIVERY_FAILED', now, row.outbox_id, row.attempt_count]);
+      [success ? 'SENT' : failureStatus, next, success ? null : 'SMTP_DELIVERY_FAILED', now, row.outbox_id, row.attempt_count]);
     }
   };
 }
