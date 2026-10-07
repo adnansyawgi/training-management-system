@@ -42,6 +42,8 @@ async function createParticipantSelfRegistrationAudit(connection, context) {
 
 async function createAuthenticationAudit(unit, user, context, outcome) {
   const success = outcome === 'SUCCESS';
+  const administrator = context.authenticationRole === 'SYSTEM_ADMINISTRATOR';
+  const label = administrator ? 'System Administrator' : 'Participant';
   const actorId = success ? user.user_id : await resolveTechnicalActor(unit.connection);
   await unit.connection.execute(`
     INSERT INTO audit_records (
@@ -53,8 +55,8 @@ async function createAuthenticationAudit(unit, user, context, outcome) {
     success ? 'AUTHENTICATION_SUCCEEDED' : 'AUTHENTICATION_FAILED',
     'USER_AUTHENTICATION', user ? String(user.user_id) : 'ANONYMOUS',
     success ? 'SUCCESS' : 'FAILURE',
-    success ? 'Participant authentication succeeded.' : 'Participant authentication was rejected.',
-    null, null, 'PARTICIPANT', 'PERSONAL_DATA', context.ipAddress || null,
+    success ? `${label} authentication succeeded.` : `${label} authentication was rejected.`,
+    null, null, administrator ? 'ALL_ADMINISTRATIVE_USERS' : 'PARTICIPANT', 'PERSONAL_DATA', context.ipAddress || null,
     context.userAgent ? context.userAgent.slice(0, 500) : null, context.correlationId || null
   ]);
 }

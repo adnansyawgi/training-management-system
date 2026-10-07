@@ -1,8 +1,8 @@
 // src/routes/participant-authentication.routes.js
 const express = require('express');
-function makeRouter({ controller, validators, security }) {
+function makeRouter({ controller, validators, loginPath = '/auth/participants/login' }) {
   const router = express.Router();
-  router.post('/auth/participants/login',
+  router.post(loginPath,
     validators.login, controller.endpoint('login', 200));
   return router;
 }

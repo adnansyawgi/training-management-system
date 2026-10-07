@@ -286,6 +286,67 @@ failure-injection triggers. Use a disposable instance with permissions to create
 the schema and triggers; remove that instance after testing. These test settings
 are separate from the application's `DB_*` configuration.
 
+WF-004 System Administrator Authentication
+------------------------------------------
+
+Implemented from the WF-004 backend v1.2 and UI v1.4 documents in
+`docs/implementation-code`. Open `/admin/login`; the public API is
+`POST /api/v1/auth/system-admin/login`. Submit only `email` and `password`.
+Generated/supplied usernames and the bootstrap static key are not login inputs.
+Email is normalized; the password is preserved and verified against Argon2id
+without applying account-creation complexity rules.
+
+Success returns exactly `{ userId, role, status, expiresAt }` with canonical role
+`SYSTEM_ADMINISTRATOR`, ACTIVE status and UTC expiry. The browser receives a
+signed HttpOnly, SameSite=Lax cookie; Secure behavior follows existing deployment
+configuration. Session identifiers, hashes and secrets are excluded from JSON.
+
+Both login endpoints now use one shared authentication composition, coordinator,
+credential verifier, database pool/session store and error handler. The
+administrator endpoint applies its own role policy and response projection;
+participant login still requires its linked participant profile and returns
+`participantId`. The common session loader supports the implemented PARTICIPANT
+and SYSTEM_ADMINISTRATOR roles, checks current role/status, rejects SYSTEM
+technical actors, and requires no participant profile/identity on an administrator
+session. It retains 30-minute idle and 8-hour absolute expiry, cookie rotation and
+unpublished-session cleanup.
+
+Shared login behavior remains: only ACTIVE may authenticate; INACTIVE returns
+401; LOCKED/DISABLED and current temporary lockout return 423; unknown email and
+wrong credentials share generic 401. Five failures in a rolling 15-minute window
+trigger 15-minute lockout. Session, successful-login state and authentication
+audit commit together before cookie delivery. Session/audit persistence failures
+return sanitized 500 without a cookie. Login does not require a pre-existing
+authenticated CSRF token; future authenticated mutations must use the stored
+server-issued token.
+
+Administrator login reuses `AUTHENTICATION_SUCCEEDED`/`AUTHENTICATION_FAILED`
+audit events with scope `ALL_ADMINISTRATIVE_USERS` and administrator-specific
+summary text. Successful events reference the authenticated administrator;
+unauthenticated failures use the configured reserved technical actor. Participant
+authentication audit scope/text remains unchanged.
+
+No new migration, role defaults, deployment secrets, logout endpoint or
+user-management page is introduced. The existing WF-002 session schema,
+`SESSION_SECRET`, cookie configuration and reserved actor are prerequisites;
+the administrator account may be provisioned by WF-003. After HTTP 200 the
+browser navigates to `/admin/users`, the proposed intended user-management
+destination in `src/config/ui.js`. That page is outside WF-004 and currently
+returns 404; adjust the centralized destination when its route is implemented.
+
+Run `npm.cmd test` from `src` for unit/API/DOM tests. Isolated MySQL tests use
+`WF004_TEST_DB_HOST`, `WF004_TEST_DB_PORT`, `WF004_TEST_DB_USER`,
+`WF004_TEST_DB_PASSWORD`, and a fresh `WF004_TEST_DB_NAME` matching
+`tms_wf004_<unique-name>_test`. They create a fresh schema in a disposable instance,
+bootstrap an administrator, and verify login, role/status rejection, concurrent
+lockout, session/audit rollback, rotation, live session eligibility and timeouts.
+
+Verification on 7 October 2026: **30 suites and 263 tests passed**, including
+isolated MySQL WF-002, WF-003 and WF-004 suites. The application database was
+not modified; disposable test infrastructure was removed after verification.
+`git diff --check` passed. These checks are implementation evidence, not formal
+production/release approval.
+
 WF-003 System Administrator Bootstrap
 -------------------------------------
 
@@ -361,8 +422,8 @@ Success returns exactly
 `{ userId, accountIdentifier, username, role, accountStatus, createdAt }`
 with HTTP 201. No participant profile, session cookie or notification is
 created. The browser clears both secrets and navigates to `/admin/login`.
-That is the approved future WF-004 destination and currently returns 404;
-WF-004 is not implemented as part of bootstrap.
+That destination now serves WF-004 System Administrator Login. Bootstrap itself
+does not authenticate the newly created administrator.
 
 The advisory-lock gate, duplicate username/email mapping, technical audit actor,
 ACTIVE role defaults and UI URLs were explicitly approved during implementation.

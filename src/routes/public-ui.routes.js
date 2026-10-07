@@ -11,5 +11,8 @@ router.get(ui.participantLoginUrl, (req, res) => {
 router.get(ui.systemAdministratorBootstrapUrl, (req, res) => {
   res.render('auth/system-administrator-bootstrap', { ...ui });
 });
+router.get(ui.administrativeLoginUrl, (req, res) => {
+  res.render('auth/admin-login', { ...ui });
+});
 
 module.exports = router;

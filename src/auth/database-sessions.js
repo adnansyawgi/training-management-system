@@ -64,16 +64,22 @@ function makeDatabaseSessions({ pool, config = readAuthenticationConfig, now = (
           const data = JSON.parse(rows[0].session_data);
           const absolute = new Date(data.absoluteExpiresAt);
           if (Number.isFinite(absolute.getTime()) && absolute > current && sameId(rows[0].user_id, data.userId)) {
-            const [users] = await connection.execute('SELECT role_id, account_status, authentication_method, lockout_until FROM users WHERE user_id = ?', [positiveId(data.userId)]);
+            const [users] = await connection.execute('SELECT role_id, role_name, account_status, authentication_method, lockout_until FROM users WHERE user_id = ?', [positiveId(data.userId)]);
             const user = users[0];
             const [profiles] = await connection.execute('SELECT participant_id FROM participants WHERE user_id = ? LIMIT 2', [data.userId]);
-            if (user?.role_id === 'PARTICIPANT' && data.role === 'PARTICIPANT' && user.account_status === 'ACTIVE' &&
+            const participant = data.role === 'PARTICIPANT';
+            const supportedRole = participant || data.role === 'SYSTEM_ADMINISTRATOR';
+            const validProfile = participant
+              ? profiles.length === 1 && sameId(profiles[0].participant_id, data.participantId)
+              : profiles.length === 0 && data.participantId === undefined;
+            if (supportedRole && user?.role_id === data.role && user.role_name === user.role_id && user.account_status === 'ACTIVE' &&
                 user.authentication_method !== 'SYSTEM' && (!user.lockout_until || new Date(user.lockout_until) <= current) &&
-                profiles.length === 1 && sameId(profiles[0].participant_id, data.participantId) &&
+                validProfile &&
                 typeof data.csrfToken === 'string' && /^[a-f0-9]{64}$/.test(data.csrfToken)) {
               const expiresAt = new Date(Math.min(current.getTime() + config().idleMs, absolute.getTime()));
               await connection.execute('UPDATE sessions SET expires_at = ? WHERE session_id = ?', [expiresAt, sessionId]);
-              principal = { userId: positiveId(data.userId), participantId: positiveId(data.participantId), role: data.role, csrfToken: data.csrfToken };
+              principal = { userId: positiveId(data.userId), role: data.role, csrfToken: data.csrfToken };
+              if (participant) principal.participantId = positiveId(data.participantId);
             }
           }
         }

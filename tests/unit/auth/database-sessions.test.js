@@ -40,7 +40,7 @@ test.each(['idle', 'absolute', 'disabled', 'wrong-role', 'missing-profile'])('re
   connection.execute.mockReset().mockResolvedValue([{}]);
   connection.execute.mockResolvedValueOnce([[{ user_id: '12', session_data: JSON.stringify(data), expires_at: reason === 'idle' ? instant : new Date('2026-10-07T01:30:00Z') }]]);
   if (reason !== 'idle' && reason !== 'absolute') {
-    connection.execute.mockResolvedValueOnce([[{ role_id: reason === 'wrong-role' ? 'TRAINER' : 'PARTICIPANT', account_status: reason === 'disabled' ? 'DISABLED' : 'ACTIVE', authentication_method: 'PASSWORD' }]])
+    connection.execute.mockResolvedValueOnce([[{ role_id: reason === 'wrong-role' ? 'TRAINER' : 'PARTICIPANT', role_name: reason === 'wrong-role' ? 'TRAINER' : 'PARTICIPANT', account_status: reason === 'disabled' ? 'DISABLED' : 'ACTIVE', authentication_method: 'PASSWORD' }]])
       .mockResolvedValueOnce([reason === 'missing-profile' ? [] : [{ participant_id: '34' }]]);
   }
   await expect(sessions.load({ headers: { cookie: 'tms.sid=' + prepared.cookiePlan.value } })).resolves.toBeNull();
@@ -52,9 +52,26 @@ test('refreshes idle expiry without exceeding the absolute deadline', async () =
   const data = { userId: '12', participantId: '34', role: 'PARTICIPANT', csrfToken: 'c'.repeat(64), absoluteExpiresAt: '2026-10-07T01:10:00Z' };
   connection.execute.mockReset().mockResolvedValue([{}]);
   connection.execute.mockResolvedValueOnce([[{ user_id: '12', session_data: JSON.stringify(data), expires_at: new Date('2026-10-07T01:05:00Z') }]])
-    .mockResolvedValueOnce([[{ role_id: 'PARTICIPANT', account_status: 'ACTIVE', authentication_method: 'PASSWORD' }]])
+    .mockResolvedValueOnce([[{ role_id: 'PARTICIPANT', role_name: 'PARTICIPANT', account_status: 'ACTIVE', authentication_method: 'PASSWORD' }]])
     .mockResolvedValueOnce([[{ participant_id: '34' }]]);
   const principal = await sessions.load({ headers: { cookie: 'tms.sid=' + prepared.cookiePlan.value } });
   expect(principal).toEqual({ userId: '12', participantId: '34', role: 'PARTICIPANT', csrfToken: 'c'.repeat(64) });
   expect(connection.execute.mock.calls.at(-1)[1][0].toISOString()).toBe('2026-10-07T01:10:00.000Z');
+});
+
+test.each(['valid', 'role-changed', 'disabled', 'technical-actor', 'unexpected-profile', 'identity-mismatch'])('administrator session %s validates the live principal without participant identity', async reason => {
+  const prepared = await sessions.prepare({ connection, now: instant, preparedSessionIds: [] }, {}, { userId: '12', role: 'SYSTEM_ADMINISTRATOR' });
+  const data = { userId: '12', role: 'SYSTEM_ADMINISTRATOR', csrfToken: 'c'.repeat(64), absoluteExpiresAt: '2026-10-07T09:00:00Z' };
+  connection.execute.mockReset().mockResolvedValue([{}]);
+  connection.execute.mockResolvedValueOnce([[{ user_id: reason === 'identity-mismatch' ? '13' : '12', session_data: JSON.stringify(data), expires_at: new Date('2026-10-07T01:30:00Z') }]]);
+  if (reason !== 'identity-mismatch') {
+    connection.execute.mockResolvedValueOnce([[{ role_id: reason === 'role-changed' ? 'TRAINER' : 'SYSTEM_ADMINISTRATOR', role_name: 'SYSTEM_ADMINISTRATOR',
+      account_status: reason === 'disabled' ? 'DISABLED' : 'ACTIVE', authentication_method: reason === 'technical-actor' ? 'SYSTEM' : 'PASSWORD' }]])
+      .mockResolvedValueOnce([reason === 'unexpected-profile' ? [{ participant_id: '34' }] : []]);
+  }
+  const principal = await sessions.load({ headers: { cookie: 'tms.sid=' + prepared.cookiePlan.value } });
+  if (reason === 'valid') {
+    expect(principal).toEqual({ userId: '12', role: 'SYSTEM_ADMINISTRATOR', csrfToken: 'c'.repeat(64) });
+    expect(principal).not.toHaveProperty('participantId');
+  } else expect(principal).toBeNull();
 });

@@ -11,5 +11,7 @@ module.exports = Object.freeze({
   programListUrl: '/programs',
   systemAdministratorBootstrapUrl: '/admin/bootstrap',
   administrativeLoginUrl: '/admin/login',
-  systemAdministratorBootstrapJsUrl: '/js/system-administrator-bootstrap.js'
+  systemAdministratorBootstrapJsUrl: '/js/system-administrator-bootstrap.js',
+  systemAdministratorLoginJsUrl: '/js/system-admin-login.js',
+  adminLandingUrl: '/admin/users'
 });
