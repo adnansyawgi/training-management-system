@@ -29,5 +29,8 @@ app.use('/api/v1', require('./program-catalogue.composition').assemble(catalogue
 app.use(require('./routes/program-catalogue-ui.routes').makePageRouter(catalogue));
 app.use('/api/v1', require('./program-details.composition').assemble(require('./program-details.bindings')));
 app.use(require('./routes/program-details-ui.routes').makePageRouter());
+const registrations = require('./participant-program-registration.bindings');
+app.use('/api/v1', require('./participant-program-registration.composition').assemble(registrations));
+app.use(require('./routes/participant-registration-ui.routes').makePageRouter(registrations, require('./program-details.bindings').programs));
 app.use(errorHandler);
 module.exports = app;

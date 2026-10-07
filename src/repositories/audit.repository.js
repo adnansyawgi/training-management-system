@@ -118,11 +118,19 @@ async function createCsrfRejectionAudit(connection, principal, context) {
     change_summary, previous_value, new_value, access_scope, data_classification,
     ip_address, user_agent, correlation_id
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
-    new Date(), principal.userId, principal.role, 'CSRF_REJECTED', 'ADMINISTRATIVE_USER_ACCOUNT',
+    new Date(), principal.userId, principal.role, 'CSRF_REJECTED', principal.role === 'PARTICIPANT' ? 'REGISTRATION' : 'ADMINISTRATIVE_USER_ACCOUNT',
     'REQUEST', 'FAILURE', 'Authenticated request rejected by CSRF validation.', null, null,
-    'ALL_ADMINISTRATIVE_USERS', 'PERSONAL_DATA', context.ipAddress || null,
+    principal.role === 'PARTICIPANT' ? 'PARTICIPANT' : 'ALL_ADMINISTRATIVE_USERS', 'PERSONAL_DATA', context.ipAddress || null,
     context.userAgent?.slice(0, 500) || null, context.correlationId || null
   ]);
 }
 module.exports.createAdministrativeUserAudit = createAdministrativeUserAudit;
 module.exports.createCsrfRejectionAudit = createCsrfRejectionAudit;
+module.exports.createRegistrationAudit = async (connection, event) => {
+  await connection.execute(`INSERT INTO audit_records (event_timestamp,actor_user_id,actor_role,action,entity_type,entity_id,result,
+    change_summary,previous_value,new_value,access_scope,data_classification,ip_address,user_agent,correlation_id)
+    VALUES (?,?,'PARTICIPANT','REGISTRATION_CREATED','REGISTRATION',?,'SUCCESS','Participant registration created.',NULL,?,'PARTICIPANT','PERSONAL_DATA',?,?,?)`,
+  [event.now, event.context.principal.userId, event.registrationId,
+    JSON.stringify({ programId: event.programId, status: 'REGISTERED' }), event.context.ipAddress || null,
+    event.context.userAgent?.slice(0, 500) || null, event.context.correlationId || null]);
+};

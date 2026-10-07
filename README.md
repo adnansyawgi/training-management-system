@@ -648,8 +648,7 @@ A single parameterized SELECT reads detail and derives available seats from
 capacity minus current REGISTERED registrations. CANCELLED history is excluded.
 The page renders values using textContent. Back returns to `/programs`.
 Register is shown only for OPEN programs with seats remaining, and navigates to
-`/programs/:programId/register`, the proposed future WF-009 target. That page is
-not implemented by WF-008. Browser visibility does not establish registration
+`/programs/:programId/register`, now implemented by WF-009. Browser visibility does not establish registration
 eligibility: WF-009 must authenticate and revalidate role, window and capacity
 before creating any registration. This workflow adds no writes, session, audit
 or notification events.
@@ -664,3 +663,100 @@ registration/session/audit writes. Existing application data is not modified.
 Verification on 7 October 2026: **48 suites and 484 tests passed**, including
 live isolated MySQL WF-002 through WF-008 suites. The disposable test container
 was removed; the application database was not modified. `git diff --check` passed.
+
+WF-009 Participant Program Registration
+---------------------------------------
+
+Implemented from the WF-009 backend v1.2 and UI v1.4 documents. Participants
+open `/programs/:programId/register` using the Register link from Program Details.
+The protected confirmation page shows the selected program and session-linked
+participant name/email; NRIC/Passport is masked except for its last four
+characters (short values are fully masked). Cancel returns to Program Details.
+Confirm Registration submits only a numeric `programId` and the existing
+`X-CSRF-Token`. Success stays on the page with a confirmation message and disables
+repeat submission.
+
+`POST /api/v1/registrations` requires an ACTIVE PARTICIPANT session and valid
+CSRF token. Participant identity is derived exclusively from the session; identity,
+status and other extra body fields are rejected. Success returns exactly
+`{ registrationId, referenceNo, programId, status, registeredAt }` with HTTP 201,
+status REGISTERED and a server-generated `R-<ULID>` reference. Reference collisions
+retry at most three times. Unsafe response IDs fail before transaction commit.
+
+The transaction locks the participant first, rechecks live account/session state,
+then locks the visible program. It validates existing mandatory participant data,
+OPEN status, the UTC registration window (opening inclusive, closing exclusive),
+active duplicate, remaining capacity and schedule overlap. Same-date schedules
+use strict interval intersection; adjacent schedules are allowed. DATE/TIME
+schedule fields share the configured business timezone, while persisted
+registration-window DATETIME values represent UTC. CANCELLED registration history
+does not block re-registration. Concurrent requests cannot exceed capacity or
+bypass the same-participant overlap check. No administrator approval or waiting
+list is introduced.
+
+The registration, `REGISTRATION_CREATED` audit (participant actor and PARTICIPANT
+scope) and notification outbox entry commit together. Failure rolls back all three.
+Malformed requests return 400; missing/expired authentication returns 401;
+disallowed roles/CSRF return 403; unknown/non-visible program returns 404;
+duplicate/full/window/overlap returns 409; infrastructure errors return sanitized
+500. CSRF rejections are audited without creating a registration. No raw identity,
+credential, CSRF token or SMTP error text is stored in audit/failure output.
+
+### WF-009 database and email setup
+
+Apply `db/migrations/v1.3_registration-notification-outbox.sql` once after v1.2.
+It adds the SDD notification_outbox table and a unique business-event key. The
+application database is not automatically migrated. Until this table exists,
+registration fails closed and rolls back rather than claiming success.
+
+Copy the new deployment settings from `src/.env.example` into `src/.env` or the
+secret store:
+
+```dotenv
+BUSINESS_TIMEZONE=Asia/Kuala_Lumpur
+SMTP_HOST=<your SMTP host>
+SMTP_PORT=587
+SMTP_FROM=<sender email address>
+SMTP_USER=<SMTP username, if required>
+SMTP_PASSWORD=<SMTP password, if required>
+```
+
+Restart the web server and run the separate worker from the project root:
+
+```powershell
+npm.cmd run notifications --prefix src
+```
+
+The worker uses the approved Nodemailer dependency with verified TLS (implicit
+TLS on port 465, required STARTTLS on other configured ports) and a 10-second
+whole-delivery deadline. Transport behavior follows the
+[Nodemailer SMTP documentation](https://nodemailer.com/smtp).
+It processes only committed REGISTRATION_CONFIRMED outbox entries with subject
+'Training registration confirmed'. The recipient is the linked user email; the
+payload contains only reference, program name and schedule. No NRIC/Passport or
+credential is included. Email failure leaves registration committed and records
+safe retry state. Initial delivery plus three retries use 1/2/4-minute backoff,
+then FAILED. Missing SMTP configuration stops only the worker; registration can
+continue queuing committed notifications.
+
+Workers claim rows using FOR UPDATE SKIP LOCKED, recover PROCESSING leases older
+than 60 seconds and fence completion by attempt count. A stable message ID helps
+identify retries. SMTP delivery is at least once: a crash after provider acceptance
+and before recording SENT can lead to a repeated email; registration remains
+unique and committed. SMTP secrets are never included in logs or source control.
+
+### WF-009 tests
+
+Run `npm.cmd test` from `src`. Isolated MySQL verification uses
+`WF009_TEST_DB_HOST`, `WF009_TEST_DB_PORT`, `WF009_TEST_DB_USER`,
+`WF009_TEST_DB_PASSWORD` and a fresh `WF009_TEST_DB_NAME` matching
+`tms_wf009_<unique-name>_test`. It refuses an existing schema and applies v1.0
+through v1.3 in a disposable database. Tests cover last-seat contention, concurrent
+duplicates and overlaps, adjacent schedules, cancelled history, window/state
+rejection, mandatory-write rollback, masking, session/CSRF rechecks and concurrent
+outbox claims/retry recovery. SMTP uses a mock transport; no real email is sent.
+
+Verification on 7 October 2026: **53 suites and 548 tests passed**, including
+live isolated MySQL WF-002 through WF-009 suites. Application schema inspection
+was read-only; application data was not modified. The disposable test container
+was removed and no real email was sent. `git diff --check` passed.

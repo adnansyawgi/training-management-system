@@ -2,7 +2,8 @@
   "private": true,
   "scripts": {
     "start": "node server.js",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "notifications": "node notification-worker.js"
   },
   "jest": {
     "roots": [
@@ -15,6 +16,7 @@
     "ejs": "^7.0.1",
     "express": "^5.2.1",
     "mysql2": "^3.24.5",
+    "nodemailer": "^10.0.15",
     "ulid": "^3.0.2"
   },
   "devDependencies": {
