@@ -6,6 +6,7 @@ function makeDatabaseSessions({ pool, config = readAuthenticationConfig, now = (
   const options = () => ({ path: '/', httpOnly: true, secure: config().secure, sameSite: 'lax' });
   const sign = id => createHmac('sha256', config().secret).update(id).digest('base64url');
   function readId(req) {
+    if (!req.headers.cookie) return null;
     const entry = String(req.headers.cookie || '').split(';').map(part => part.trim())
       .find(part => part.startsWith(config().cookieName + '='));
     if (!entry) return null;

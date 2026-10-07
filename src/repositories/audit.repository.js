@@ -92,3 +92,31 @@ async function createSystemAdministratorBootstrapRejectionAudit(connection, cont
 
 module.exports = { createParticipantSelfRegistrationAudit, resolveTechnicalActor, createAuthenticationAudit,
   createSystemAdministratorBootstrapAudit, createSystemAdministratorBootstrapRejectionAudit };
+
+async function createAdministrativeUserAudit(connection, event) {
+  await connection.execute(`INSERT INTO audit_records (
+    event_timestamp, actor_user_id, actor_role, action, entity_type, entity_id, result,
+    change_summary, previous_value, new_value, access_scope, data_classification,
+    ip_address, user_agent, correlation_id
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+    event.occurredAt, event.actorUserId, 'SYSTEM_ADMINISTRATOR', 'ACCOUNT_CREATED', 'ADMINISTRATIVE_USER_ACCOUNT',
+    String(event.userId), 'SUCCESS', 'Administrative user account created by System Administrator.',
+    null, JSON.stringify({ userId: String(event.userId), role: event.role }), 'ALL_ADMINISTRATIVE_USERS', 'PERSONAL_DATA',
+    event.context.ipAddress || null, event.context.userAgent?.slice(0, 500) || null, event.context.correlationId || null
+  ]);
+}
+
+async function createCsrfRejectionAudit(connection, principal, context) {
+  await connection.execute(`INSERT INTO audit_records (
+    event_timestamp, actor_user_id, actor_role, action, entity_type, entity_id, result,
+    change_summary, previous_value, new_value, access_scope, data_classification,
+    ip_address, user_agent, correlation_id
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+    new Date(), principal.userId, principal.role, 'CSRF_REJECTED', 'ADMINISTRATIVE_USER_ACCOUNT',
+    'REQUEST', 'FAILURE', 'Authenticated request rejected by CSRF validation.', null, null,
+    'ALL_ADMINISTRATIVE_USERS', 'PERSONAL_DATA', context.ipAddress || null,
+    context.userAgent?.slice(0, 500) || null, context.correlationId || null
+  ]);
+}
+module.exports.createAdministrativeUserAudit = createAdministrativeUserAudit;
+module.exports.createCsrfRejectionAudit = createCsrfRejectionAudit;

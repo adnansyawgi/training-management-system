@@ -317,8 +317,8 @@ wrong credentials share generic 401. Five failures in a rolling 15-minute window
 trigger 15-minute lockout. Session, successful-login state and authentication
 audit commit together before cookie delivery. Session/audit persistence failures
 return sanitized 500 without a cookie. Login does not require a pre-existing
-authenticated CSRF token; future authenticated mutations must use the stored
-server-issued token.
+authenticated CSRF token; WF-005 account creation uses the stored server-issued
+token through the `X-CSRF-Token` header.
 
 Administrator login reuses `AUTHENTICATION_SUCCEEDED`/`AUTHENTICATION_FAILED`
 audit events with scope `ALL_ADMINISTRATIVE_USERS` and administrator-specific
@@ -330,9 +330,8 @@ No new migration, role defaults, deployment secrets, logout endpoint or
 user-management page is introduced. The existing WF-002 session schema,
 `SESSION_SECRET`, cookie configuration and reserved actor are prerequisites;
 the administrator account may be provisioned by WF-003. After HTTP 200 the
-browser navigates to `/admin/users`, the proposed intended user-management
-destination in `src/config/ui.js`. That page is outside WF-004 and currently
-returns 404; adjust the centralized destination when its route is implemented.
+browser navigates to `/admin/users`, the user-management destination in
+`src/config/ui.js`. WF-005 now implements its protected account-creation page.
 
 Run `npm.cmd test` from `src` for unit/API/DOM tests. Isolated MySQL tests use
 `WF004_TEST_DB_HOST`, `WF004_TEST_DB_PORT`, `WF004_TEST_DB_USER`,
@@ -444,3 +443,55 @@ Use a disposable instance and a fresh database named
 the existing migrations only in the fresh test schema, injects account/audit
 failures, and checks concurrent bootstrap, duplicates, credential hashing,
 rejection audit and the absence of participant profiles and sessions.
+
+WF-005 Administrative User Creation
+----------------------------------
+
+Implemented from the WF-005 backend v1.2 and UI v1.4 implementation documents.
+Sign in through `/admin/login`, then open `/admin/users`. Both the page and
+`POST /api/v1/admin/users` require an ACTIVE SYSTEM_ADMINISTRATOR session.
+The page supplies the session's CSRF token to the API as `X-CSRF-Token`.
+Missing or invalid tokens return 403 and create a `CSRF_REJECTED` audit event.
+
+The API accepts exactly `username`, `name`, `email`, `password` and `role`.
+Allowed roles are TRAINING_ADMINISTRATOR and TRAINER. Username/name/email limits
+are 100/200/254 characters. Passwords require at least 12 characters including
+uppercase, lowercase, digit and non-alphanumeric character, and use Argon2id.
+The server generates `A-<ULID>`, assigns ACTIVE status, and derives role controls
+from the approved deployment defaults below. Copy these values from
+`src/.env.example` into `src/.env` or deployment configuration and restart:
+
+```dotenv
+TRAINING_ADMINISTRATOR_PERMISSIONS_JSON='["PROGRAM_MANAGE","CATEGORY_MANAGE","REGISTRATION_READ","REPORT_GENERATE"]'
+TRAINING_ADMINISTRATOR_ACCESS_SCOPE_JSON='["ALL_TRAINING_OPERATIONS"]'
+TRAINING_ADMINISTRATOR_RESPONSIBILITIES_JSON='["MANAGE_PROGRAMS","MANAGE_CATEGORIES","VIEW_REGISTRATIONS","GENERATE_REPORTS"]'
+TRAINER_PERMISSIONS_JSON='["ASSIGNED_PROGRAM_READ","ASSIGNED_REGISTRATION_READ","ATTENDANCE_RECORD","CERTIFICATE_ISSUE"]'
+TRAINER_ACCESS_SCOPE_JSON='["ASSIGNED_PROGRAMS"]'
+TRAINER_RESPONSIBILITIES_JSON='["VIEW_ASSIGNED_PROGRAMS","VIEW_ASSIGNED_REGISTRATIONS","RECORD_ATTENDANCE","ISSUE_CERTIFICATES"]'
+```
+
+Missing or malformed role configuration fails closed with sanitized 500.
+Existing session and audit configuration remains required; no new migration is
+needed. Success returns HTTP 201 with exactly `userId`, `accountIdentifier`,
+`username`, `name`, `email`, `role`, `accountStatus` and `createdAt`. The form
+clears after success and remains on `/admin/users`.
+
+Duplicate username/email returns 409; invalid input returns 400; missing or
+expired authentication returns 401; disallowed creator/target role returns 403.
+Account insertion and the `ACCOUNT_CREATED` audit commit in one transaction,
+attributed to the authenticated administrator. The creator and session are
+rechecked and locked inside that transaction. User or audit failures roll back
+both writes. Passwords, hashes and CSRF tokens are excluded from audit output.
+Creation does not provision a participant profile or authenticate the new user.
+
+Run `npm.cmd test` from `src`. Live MySQL tests use `WF005_TEST_DB_HOST`,
+`WF005_TEST_DB_PORT`, `WF005_TEST_DB_USER`, `WF005_TEST_DB_PASSWORD` and a fresh
+`WF005_TEST_DB_NAME` matching `tms_wf005_<unique-name>_test`. Use a disposable
+instance: the suite refuses existing schemas and applies migrations only to its
+fresh test database. Coverage includes the bootstrap/login/page/create flow,
+both staff roles, CSRF auditing, concurrent duplicates, creator/session rechecks,
+and rollback after injected account/audit failures.
+
+Verification on 7 October 2026: **35 suites and 330 tests passed**, including
+live isolated MySQL WF-002 through WF-005 suites. The application database was
+not modified. `git diff --check` passed.

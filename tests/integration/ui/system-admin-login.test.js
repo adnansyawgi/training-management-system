@@ -7,5 +7,5 @@ test('administrator login renders configured navigation and shared assets withou
   expect(result.text).toContain('/js/system-admin-login.js');
   expect(result.headers['set-cookie']).toBeUndefined();
   await request(app).get('/js/system-admin-login.js').expect(200);
-  await request(app).get('/admin/users').expect(404);
+  await request(app).get('/admin/users').expect(401);
 });
