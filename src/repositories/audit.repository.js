@@ -153,3 +153,14 @@ module.exports.createManagementAudit = async (connection, event) => {
     String(program?event.saved.program_id:event.saved.category_id),program?'Training program saved.':'Program category saved.',
     event.before?JSON.stringify(values(event.before)):null,JSON.stringify(values(event.saved)),event.context.ipAddress || null,event.context.userAgent?.slice(0,500) || null,event.context.correlationId || null]);
 };
+module.exports.createAttendanceAudit = async (connection,event) => {
+  const values=row=>({status:row.status,percentage:Number(row.percentage),attendanceDate:row.attendance_date,
+    checkInAt:row.check_in_at,checkOutAt:row.check_out_at,verificationMethod:row.verification_method,
+    evidenceReference:row.evidence_reference,recordedBy:String(row.recorded_by)});
+  await connection.execute(`INSERT INTO audit_records (event_timestamp,actor_user_id,actor_role,action,entity_type,entity_id,result,
+    change_summary,previous_value,new_value,access_scope,data_classification,ip_address,user_agent,correlation_id)
+    VALUES (?,?,'TRAINER',?,'ATTENDANCE',?,'SUCCESS','Attendance saved.',?,?,'ASSIGNED_PROGRAMS','PERSONAL_DATA',?,?,?)`,
+  [event.now,event.context.principal.userId,event.before?'ATTENDANCE_UPDATED':'ATTENDANCE_CREATED',String(event.row.attendance_id),
+    event.before?JSON.stringify(values(event.before)):null,JSON.stringify(values(event.row)),event.context.ipAddress||null,
+    event.context.userAgent?.slice(0,500)||null,event.context.correlationId||null]);
+};

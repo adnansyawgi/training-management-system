@@ -41,5 +41,8 @@ app.use(require('./routes/training-management-ui.routes').makePageRouter(managem
 const registrationManagement = require('./registration-management-view.bindings');
 app.use('/api/v1', require('./registration-management-view.composition').assemble(registrationManagement));
 app.use(require('./routes/registration-management-ui.routes').makePageRouter(registrationManagement));
+const attendance=require('./attendance-management.bindings');
+app.use('/api/v1',require('./attendance-management.composition').assemble(attendance));
+app.use(require('./routes/attendance-management-ui.routes').makePageRouter(attendance));
 app.use(errorHandler);
 module.exports = app;

@@ -508,8 +508,8 @@ TRAINING_ADMINISTRATOR and TRAINER accounts can authenticate. Success returns
 exactly `{ userId, role, status, expiresAt }` with HTTP 200 and a signed HttpOnly,
 SameSite=Lax cookie (Secure according to existing deployment configuration).
 The browser redirects by the canonical response role: Training Administrator to
-`/admin/programs`, Trainer to `/trainer/programs`. WF-011 implements the Training Administrator destination. The Trainer destination
-remains reserved for its separate workflow and currently returns 404. WF-006 provides
+`/admin/programs`, Trainer to `/trainer/programs`. WF-011 implements the Training Administrator destination; WF-013 now implements
+the Trainer assigned-program destination. WF-006 provides
 login and authentication, without implementing those pages.
 
 The shared authentication transaction commits successful-login state, session
@@ -937,3 +937,77 @@ DTOs, filtering and UTC boundaries, deterministic pagination, all role exclusion
 permission/scope revocation, concurrent snapshot consistency, read-only behavior,
 safe detail rendering, browser errors, pagination and stale-response handling.
 The disposable test container was removed; the application database was unchanged.
+
+
+WF-013 Attendance Management
+------------------------------
+
+Implemented from WF-013 backend v1.2, UI v1.4 and SDD v1.16 with approved page,
+roster, schema and audit bindings. **Apply
+`db/migrations/v1.4_attendance-management-schema.sql` once after v1.0 through
+v1.3**, then restart the application. No new environment variable is required.
+
+Sign in as a **Trainer** at `/staff/login`. The landing page `/trainer/programs`
+shows assigned programs (100 per page). Open
+`/trainer/programs/:programId/attendance` to record attendance for the selected
+program. Its server-rendered roster includes only REGISTERED participants, 100
+per page, and restores existing attendance values. Program selection opens that
+program's own roster page; no new read API is introduced. Saving applies the
+chosen attendance date and per-row values to the current page's records.
+
+`POST /api/v1/trainer/programs/:programId/attendance` accepts exactly:
+
+```json
+{
+  "attendanceDate": "2026-10-07",
+  "records": [
+    { "registrationId": 1, "status": "PRESENT" }
+  ]
+}
+```
+
+Optional per-record fields are checkInAt, checkOutAt (ISO timestamps with explicit
+zones or null), verificationMethod (50 characters), evidenceReference (255) and
+remarks (500). The browser converts BUSINESS_TIMEZONE optional time inputs to
+UTC. Status is PRESENT or ABSENT. Duplicate targets and client-supplied
+participantId, programId, recordedBy or percentage are rejected. Positive safe
+numeric body IDs and the shared 100 KB JSON request limit are retained; no new
+minimum or maximum batch size is added. An empty authorized batch returns
+`{items:[]}`. No additional program lifecycle, attendance date window or
+check-in/out ordering rule is introduced.
+
+HTTP 200 returns `{items}`; each item has exactly attendanceId, registrationId,
+participantId, programId, attendanceDate, status, percentage and recordedBy.
+Participant/program relationships derive from registration; recordedBy derives
+from the authenticated ACTIVE Trainer; PRESENT derives to 100 and ABSENT to 0.
+The unique registration_id constraint maintains one attendance row per
+registration. Updates preserve attendance ID, relationship fields and createdAt;
+omitted optional fields become null.
+
+Shared session/RBAC/CSRF middleware protects writes. Trainer and session validity
+are rechecked inside the transaction; program assignment is locked and verified.
+Registrations and existing attendance rows are locked in ID order. Only
+REGISTERED targets belonging to the selected program may be maintained.
+Attendance writes reuse WF-011's database advisory lock and bounded transaction
+retry coordinator to serialize with program assignment/schedule changes.
+Every row and its ATTENDANCE_CREATED/UPDATED audit (ASSIGNED_PROGRAMS scope)
+commit together. Any record, DTO or mandatory audit failure rolls back the
+complete batch. Audit values include status, percentage, date, optional evidence
+metadata and recorder; free-text remarks and participant identifiers are not
+copied into audit snapshots. No notification is generated.
+
+Unauthenticated requests return 401; other roles or unassigned programs return
+403; invalid/cancelled/foreign-program targets return 400; missing programs or
+registrations return 404. Unexpected failures use the common sanitized 500
+contract. Attendance history remains attached to its registration if a later
+permitted cancellation occurs.
+
+Verification on 7 October 2026: **65 suites and 715 tests passed**, including
+live isolated MySQL WF-002 through WF-013 suites. WF-013 covers migration/DTO
+contracts, create/maintenance identity preservation, server-derived values,
+late-audit batch rollback, concurrent maintenance, cancellation races,
+authorization and session changes inside the transaction, CSRF, scoped escaped
+rosters, browser request authority and safe success/error handling. The final
+pending-form adjustment also passed all eight attendance browser tests. The
+disposable test container was removed; no application database migration was
+applied by this implementation run.

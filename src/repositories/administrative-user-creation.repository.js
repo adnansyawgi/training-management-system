@@ -1,6 +1,6 @@
 const { positiveId, sameId } = require('../validators/implementation-validation');
 function makeAdministrativeUserRepository({ pool, errors, role = 'SYSTEM_ADMINISTRATOR' }) {
-  if (!['SYSTEM_ADMINISTRATOR', 'TRAINING_ADMINISTRATOR'].includes(role)) throw new Error('Unsupported administrator role binding.');
+  if (!['SYSTEM_ADMINISTRATOR', 'TRAINING_ADMINISTRATOR', 'TRAINER'].includes(role)) throw new Error('Unsupported staff role binding.');
   return {
     async run(callback) {
       const connection = await pool.getConnection();
