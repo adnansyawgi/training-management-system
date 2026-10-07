@@ -8,8 +8,8 @@ requires its configured database for successful account creation.
 The page uses EJS, `/css/app.css`, `/js/participant-register.js`, and Bootstrap
 5.3.8 CSS from the CDN documented at https://getbootstrap.com/docs/5.3/.
 Routes, navigation, CDN URL and integrity hash are centralized in
-`src/config/ui.js`. Both login links target `/login`; WF-002 is not implemented,
-so that target currently returns 404. Registration never redirects or logs in.
+`src/config/ui.js`. Both registration login links target `/login`, which now
+serves WF-002 Participant Login. Registration never redirects or logs in.
 
 Run `npm.cmd test` from `src`. Browser DOM checks use jsdom inside the existing
 Jest framework; HTTP integration checks use the existing Supertest dependency.
@@ -87,8 +87,8 @@ Service tests use mocks to verify transaction ownership, rollback calls,
 duplicate handling and bounded identifier regeneration. These are not evidence
 of actual MySQL rollback or concurrency. Live schema/index verification,
 isolated MySQL repository/rollback/concurrent registration tests, confirmation
-of the reserved actor binding and canonical audit conventions, and the existing
-WF-002 login navigation gap remain integration/release evidence requirements.
+of the reserved actor binding and canonical audit conventions remain
+integration/release evidence requirements for WF-001.
 The DOCX approval/test-status records have not been promoted to PASS.
 
 Reserved technical audit actor configuration
@@ -150,3 +150,138 @@ preserve the reserved actor's non-interactive configuration. Setting the
 environment variable alone does not create the actor. When the initial
 migration has already provisioned an actor, use its existing generated value
 instead; do not edit an applied migration or replace its identity.
+
+WF-002 Participant Authentication / Login
+----------------------------------------
+
+Implemented from the WF-002 backend v1.2 and UI v1.4 documents in
+`docs/implementation-code`. The login page is `/login`; its public API is
+`POST /api/v1/auth/participants/login`. Send only `email` and `password`.
+Email is normalized; passwords are preserved exactly and are verified with
+Argon2id without reapplying account-creation complexity rules.
+
+Successful login returns only `{ userId, participantId, role, status, expiresAt }`
+and sets a signed HttpOnly, SameSite=Lax session cookie. The session identifier
+is never returned in JSON. Login requires an ACTIVE account, consistent canonical
+PARTICIPANT role and exactly one linked participant profile. The browser redirects
+to `/programs` only after HTTP 200. `/programs` is the approved future WF-007
+target; that page remains unimplemented and currently returns 404.
+
+### Database and configuration setup
+
+1. Inspect the target database/migration history, then apply the new
+   `db/migrations/v1.1_participant-authentication-schema.sql` once after v1.0.
+   It adds `sessions` and `authentication_failures`; it does not modify v1.0.
+   Do not apply it blindly if these tables already exist.
+2. Configure the reserved audit actor identifier as documented above.
+3. Set a unique `SESSION_SECRET` of at least 32 bytes in `src/.env` or the
+   deployment secret store. Generate a secret locally, for example:
+
+   ```powershell
+   node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"
+   ```
+
+   Keep the generated secret out of source control and shared logs.
+4. Cookies default to Secure. For local development using plain HTTP only, set
+   `SESSION_COOKIE_SECURE=false`; HTTPS deployments should use `true`.
+   Production startup rejects an insecure cookie configuration.
+5. Restart from `src` using `npm.cmd start`. Startup validates configuration,
+   the reserved actor, failure-history table and session-store availability.
+
+### Troubleshooting SESSION_CONFIGURATION_ERROR
+
+If startup reports:
+
+```text
+Application startup failed { code: 'SESSION_CONFIGURATION_ERROR' }
+```
+
+Check `src/.env`. The configuration validator rejects a missing, empty or
+shorter-than-32-byte `SESSION_SECRET`. It also rejects
+`SESSION_COOKIE_SECURE=false` when `NODE_ENV=production`.
+The observed development startup failure was caused by a missing secret.
+
+Generate a unique secret using the command in the setup section, then add it
+to `src/.env`. For local development over HTTP:
+
+```dotenv
+SESSION_SECRET=<paste-generated-value>
+SESSION_COOKIE_SECURE=false
+```
+
+Replace the placeholder with the generated value; do not use it literally.
+Use `SESSION_COOKIE_SECURE=true` for HTTPS production. Keep the secret out of
+source control and shared logs; `.env.example` should contain only an empty
+secret setting, not an actual secret.
+
+Restart the application from `src`:
+
+```powershell
+npm.cmd start
+```
+
+The server loads `.env` from its working directory. Values already set in the
+process environment take precedence, so check deployment/environment overrides
+if editing `src/.env` does not resolve the error. A valid configuration fixes
+this error without changing application code.
+
+### Authentication and session behavior
+
+The user row is locked while each attempt is coordinated. Failed credentials
+persist timestamped history; five failures within a rolling 15-minute window
+set a 15-minute temporary lockout. The fifth failed credential response is 401;
+subsequent attempts during the lockout return 423. Successful login clears the
+failure history/counters, clears temporary lockout and updates `last_login_at`.
+INACTIVE returns generic 401; LOCKED/DISABLED and active temporary lockout
+return sanitized 423. Unknown email and wrong credentials share a generic 401.
+
+The shared MySQL coordinator commits session creation, successful-login state
+and mandatory audit together. Rejected outcomes commit their counters/audit;
+infrastructure errors roll back. Cookie emission happens only after commit and
+successful response serialization. Unpublished sessions are invalidated on
+commit/response failures. Each successful login generates a fresh session ID
+and replaces the previous signed browser session within the transaction.
+
+Session data stores the authenticated user/participant identity, role, a random
+server-issued CSRF token and an 8-hour absolute deadline. The shared session
+store's `load(req)` checks current account/profile eligibility, enforces the
+30-minute idle timeout and refreshes idle expiry without extending the absolute
+deadline. Future protected routes must call this shared session mechanism and
+enforce the server-issued CSRF token on authenticated state-changing requests.
+Login itself does not require a pre-existing authenticated CSRF token.
+`invalidate(sessionId)` provides session invalidation for future logout wiring;
+no new logout endpoint is introduced by this login feature. Expired sessions
+are purged at startup and every minute while the server is running.
+
+Authentication audit events use `AUTHENTICATION_SUCCEEDED` / `SUCCESS` and
+`AUTHENTICATION_FAILED` / `FAILURE`, entity type `USER_AUTHENTICATION`, scope
+`PARTICIPANT`, and classification `PERSONAL_DATA`. Success is attributed to the
+authenticated user; rejected unauthenticated attempts use the configured
+reserved technical actor. Unknown attempts use entity reference `ANONYMOUS`.
+Credentials, password hashes, supplied email and session IDs are excluded from
+these audit rows.
+
+The shared transaction, timestamp history, reserved anonymous audit actor,
+INACTIVE-to-401 mapping and `/programs` navigation binding were explicitly
+approved during WF-002 implementation. No WF-007 page or API is included.
+
+### WF-002 verification
+
+On 7 October 2026, **18 suites and 148 tests passed**, including the existing
+WF-001 tests and an isolated MySQL 8.4 integration suite. Coverage includes
+request validation, response identities, generic failures, role/status/profile
+checks, cookie attributes and delivery order, rollback/cleanup, idle/absolute
+expiry, browser outcomes, concurrent failed attempts and the rolling window.
+Live MySQL tests verified that session/audit insert failures leave no session
+or successful-login timestamp. Tests did not apply migrations to the application
+database or provide production/release approval.
+
+Run `npm.cmd test` from `src` for the normal suite; MySQL integration is skipped
+unless explicitly enabled against a disposable MySQL instance. To enable it,
+set `WF002_TEST_DB_HOST`, `WF002_TEST_DB_PORT`, `WF002_TEST_DB_USER`,
+`WF002_TEST_DB_PASSWORD`, and `WF002_TEST_DB_NAME` before running Jest.
+The test database name must match `tms_wf002_<unique-name>_test` and must not
+already exist. The suite creates a fresh schema, runs both migrations and uses
+failure-injection triggers. Use a disposable instance with permissions to create
+the schema and triggers; remove that instance after testing. These test settings
+are separate from the application's `DB_*` configuration.

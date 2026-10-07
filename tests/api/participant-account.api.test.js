@@ -26,7 +26,7 @@ test('malformed JSON is sanitized and retains correlation', async () => {
 });
 
 test.each([409, 500])('%s sanitizes internal error details', async status => {
-  service.createParticipantAccount.mockRejectedValue(Object.assign(new Error('SQL password TEST-1 private-secret'), { status, code: 'INTERNAL_TEST' }));
+  service.createParticipantAccount.mockRejectedValue(Object.assign(new Error('SQL password TEST-1 private-secret'), { status, code: status === 409 ? 'ACCOUNT_INFORMATION_CONFLICT' : 'INTERNAL_TEST' }));
   const log = jest.spyOn(console, 'error').mockImplementation(() => {});
   try {
     const response = await request(app).post('/api/v1/auth/participants').send(input).expect(status);

@@ -27,7 +27,7 @@ body {
   min-height: 2.75rem;
 }
 
-#formMessage {
+#formMessage, #pageMessage {
   overflow-wrap: anywhere;
 }
 

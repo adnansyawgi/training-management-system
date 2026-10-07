@@ -22,5 +22,5 @@ test('UI-T12: existing API validation, correlation and unknown routes remain int
   expect(result.body.correlationId).toBeTruthy();
   expect(result.headers['set-cookie']).toBeUndefined();
   await request(app).get('/not-a-route').expect(404);
-  await request(app).get('/login').expect(404);
+  await request(app).get('/login').expect(200);
 });

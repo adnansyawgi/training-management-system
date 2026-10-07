@@ -10,6 +10,8 @@ const pool = mysql.createPool({
   connectionLimit: Number(process.env.DB_CONNECTION_LIMIT || 10),
   queueLimit: 0,
   charset: 'utf8mb4',
+  supportBigNumbers: true,
+  bigNumberStrings: true,
   timezone: 'Z'
 });
 
