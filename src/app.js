@@ -47,5 +47,8 @@ app.use(require('./routes/attendance-management-ui.routes').makePageRouter(atten
 const certificates=require('./certificate-eligibility-issuance.bindings');
 app.use('/api/v1',require('./certificate-eligibility-issuance.composition').assemble(certificates));
 app.use(require('./routes/certificate-management-ui.routes').makePageRouter(certificates));
+const reports=require('./report-generation.bindings');
+app.use('/api/v1',require('./report-generation.composition').assemble(reports));
+app.use(require('./routes/report-generation-ui.routes').makePageRouter(reports));
 app.use(errorHandler);
 module.exports = app;

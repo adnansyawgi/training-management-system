@@ -173,3 +173,12 @@ module.exports.createCertificateIssuedAudit = async(connection,event)=>{
     status:row.certificate_status,eligibilityStatus:row.eligibility_status,attendancePercentage:Number(row.attendance_percentage),completionDate:row.completion_date,issueDate:row.issue_date}),
     event.context.ipAddress||null,event.context.userAgent?.slice(0,500)||null,event.context.correlationId||null]);
 };
+module.exports.createReportAudit = async(connection,event)=>{
+  await connection.execute(`INSERT INTO audit_records (event_timestamp,actor_user_id,actor_role,action,entity_type,entity_id,result,
+    change_summary,previous_value,new_value,access_scope,data_classification,ip_address,user_agent,correlation_id)
+    VALUES (?,?,'TRAINING_ADMINISTRATOR',?,'REPORT_EXECUTION',?,?,?,NULL,?,'ALL_TRAINING_OPERATIONS','PERSONAL_DATA',?,?,?)`,
+  [event.now,event.context.principal.userId,event.action,String(event.id),event.result,
+    event.result==='FAILURE'?'Report generation failed.':event.action==='REPORT_DOWNLOADED'?'Report CSV prepared for download.':'Report generated.',
+    JSON.stringify({reportType:event.definition.type,output:event.input.output,page:event.input.page,pageSize:event.input.pageSize}),
+    event.context.ipAddress||null,event.context.userAgent?.slice(0,500)||null,event.context.correlationId||null]);
+};

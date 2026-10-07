@@ -1,0 +1,7 @@
+const definitions={
+  certificates:{name:'Student Certificate Report',type:'STUDENT_CERTIFICATE',columns:[['Certificate Number','certificateNumber'],['Student Name','participantName'],['Student ID','participantId'],['Program Code','programCode'],['Program Name','programName'],['Category','categoryName'],['Program Date','trainingDate'],['Attendance %','attendancePercentage'],['Certificate Status','certificateStatus'],['Issue Date','issueDate'],['Issued By','issuedBy']]},
+  registrations:{name:'Student Program Registration Report',type:'STUDENT_PROGRAM_REGISTRATION',columns:[['Registration ID','registrationId'],['Student ID','participantId'],['Student Name','participantName'],['Program Code','programCode'],['Program Name','programName'],['Category','categoryName'],['Program Date','trainingDate'],['Registration Date','registeredAt'],['Registration Status','status'],['Cancellation Date','cancelledAt'],['Cancellation Reason','cancellationReason']]},
+  accounts:{name:'Student Account Creation Report',type:'STUDENT_ACCOUNT_CREATION',columns:[['Student ID','participantId'],['Name','name'],['Email','email'],['Mobile','mobileNo'],['Account Status','accountStatus'],['Created Date','createdAt'],['Created By','createdBy'],['Last Login','lastLoginAt']]}
+};
+for(const definition of Object.values(definitions)){definition.columns.forEach(Object.freeze);Object.freeze(definition.columns);Object.freeze(definition);}
+module.exports=Object.freeze(definitions);
