@@ -1,5 +1,5 @@
 const express=require('../../src/node_modules/express'),request=require('../../src/node_modules/supertest');
-const {assemble}=require('../../src/participant-registration-cancellation.composition');
+const {assemble}=require('../../src/composition/participant-registration-cancellation.composition');
 const {makeSessionSecurity}=require('../../src/middleware/session-security');
 const {errors}=require('../../src/auth/authentication-errors');const {makeErrorHandler}=require('../../src/middleware/implementation-errors');
 let app,bindings,sessions;

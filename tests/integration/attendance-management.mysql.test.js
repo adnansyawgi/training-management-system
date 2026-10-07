@@ -20,7 +20,7 @@ const enabled = process.env.WF013_TEST_DB_PORT && process.env.WF013_TEST_DB_NAME
       DB_USER: process.env.WF013_TEST_DB_USER || 'root', DB_PASSWORD: process.env.WF013_TEST_DB_PASSWORD, DB_NAME: database, SESSION_SECRET: 'isolated-registration-secret-'.repeat(3), SESSION_COOKIE_SECURE: 'false' });
     const [actors] = await admin.query("SELECT account_identifier FROM users WHERE authentication_method='SYSTEM'");
     process.env.SYSTEM_AUDIT_ACTOR_ACCOUNT_IDENTIFIER = actors[0].account_identifier;
-    pool = require('../../src/config/database'); app = require('../../src/app'); sessions = require('../../src/participant-authentication.bindings').sessions;
+    pool = require('../../src/config/database'); app = require('../../src/app'); sessions = require('../../src/bindings/participant-authentication.bindings').sessions;
     const createUser = async role => {
       const [result] = await admin.execute(`INSERT INTO users (account_identifier, username, name, email, password_hash,
         role_id, role_name, permissions, access_scope, permitted_responsibilities, account_status,
@@ -134,7 +134,7 @@ const enabled = process.env.WF013_TEST_DB_PORT && process.env.WF013_TEST_DB_NAME
     await admin.execute('UPDATE training_programs SET trainer_user_id=? WHERE program_id=?',[managerId,open]);await write(open,[{registrationId:id,status:'PRESENT'}]).expect(403);await request(app).get('/trainer/programs/'+open+'/attendance').set('Cookie',cookie).expect(403);
   });
   test('live Trainer and session are revalidated within the batch transaction',async()=>{
-    const id=await seed(),binding=require('../../src/attendance-management.bindings'),original=binding.authorization.assertCreator;
+    const id=await seed(),binding=require('../../src/bindings/attendance-management.bindings'),original=binding.authorization.assertCreator;
     binding.authorization.assertCreator=async(connection,context)=>{await admin.execute("UPDATE users SET account_status='DISABLED' WHERE user_id=?",[trainerId]);return original(connection,context);};
     try{await write(open,[{registrationId:id,status:'PRESENT'}]).expect(403);}finally{binding.authorization.assertCreator=original;await admin.execute("UPDATE users SET account_status='ACTIVE' WHERE user_id=?",[trainerId]);}
     binding.authorization.assertCreator=async(connection,context)=>{await admin.execute('UPDATE sessions SET expires_at=UTC_TIMESTAMP()-INTERVAL 1 MINUTE WHERE session_id=?',[context.sessionId]);return original(connection,context);};

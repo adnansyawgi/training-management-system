@@ -1,11 +1,11 @@
-jest.mock('../../../src/program-catalogue.bindings', () => ({
+jest.mock('../../../src/bindings/program-catalogue.bindings', () => ({
   catalogue: { activeCategories: jest.fn().mockResolvedValue([{ category_id: '2', name: '<script>Category</script>' }]),
     readPage: jest.fn().mockResolvedValue({ rows: [], total: 0 }) },
   configuration: require('../../../src/config/program-catalogue')
 }));
 const request = require('../../../src/node_modules/supertest');
 const app = require('../../../src/app');
-const bindings = require('../../../src/program-catalogue.bindings');
+const bindings = require('../../../src/bindings/program-catalogue.bindings');
 test('public page binds escaped categories, approved options, assets and navigation', async () => {
   const result = await request(app).get('/programs').expect(200);
   expect(result.text).toContain('&lt;script&gt;Category&lt;/script&gt;');

@@ -1,6 +1,6 @@
 const express = require('../../src/node_modules/express');
 const request = require('../../src/node_modules/supertest');
-const { assemble } = require('../../src/participant-program-registration.composition');
+const { assemble } = require('../../src/composition/participant-program-registration.composition');
 const { makeSessionSecurity } = require('../../src/middleware/session-security');
 const { errors } = require('../../src/auth/authentication-errors');
 const { makeErrorHandler } = require('../../src/middleware/implementation-errors');

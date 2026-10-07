@@ -1,9 +1,9 @@
-const { makeService } = require('./services/administrative-user-creation.service');
-const { makeValidators } = require('./validators/administrative-user-creation.validator');
-const { makeController } = require('./controllers/system-administrator-bootstrap.controller');
-const { makeResponseCodec } = require('./utils/implementation-response-codec');
-const { makeResponseTransport } = require('./utils/implementation-response-transport');
-const { errors } = require('./auth/authentication-errors');
+const { makeService } = require('../services/administrative-user-creation.service');
+const { makeValidators } = require('../validators/administrative-user-creation.validator');
+const { makeController } = require('../controllers/system-administrator-bootstrap.controller');
+const { makeResponseCodec } = require('../utils/implementation-response-codec');
+const { makeResponseTransport } = require('../utils/implementation-response-transport');
+const { errors } = require('../auth/authentication-errors');
 const express = require('express');
 function assemble(bindings) {
   for (const name of ['transactions.run', 'authorization.assertCreator', 'accounts.createWithIdentifierRetry',

@@ -31,7 +31,7 @@ const enabled = process.env.WF005_TEST_DB_PORT && process.env.WF005_TEST_DB_NAME
       TRAINER_ACCESS_SCOPE_JSON: '["ASSIGNED_PROGRAMS"]', TRAINER_RESPONSIBILITIES_JSON: '["VIEW_ASSIGNED_PROGRAMS","VIEW_ASSIGNED_REGISTRATIONS","RECORD_ATTENDANCE","ISSUE_CERTIFICATES"]',
       PARTICIPANT_PERMISSIONS_JSON: '["PROGRAM_READ"]', PARTICIPANT_ACCESS_SCOPE_JSON: '["OWN_PARTICIPANT_RESOURCES"]', PARTICIPANT_RESPONSIBILITIES_JSON: '["VIEW_PROGRAMS"]' });
     pool = require('../../src/config/database'); app = require('../../src/app');
-    await require('../../src/participant-authentication.bindings').credentials.initialize();
+    await require('../../src/bindings/participant-authentication.bindings').credentials.initialize();
     await request(app).post('/api/v1/auth/system-admin/bootstrap').send(administrator).expect(201);
   }, 30000);
   beforeEach(async () => {
@@ -106,7 +106,7 @@ const enabled = process.env.WF005_TEST_DB_PORT && process.env.WF005_TEST_DB_NAME
     } finally { process.env.TRAINER_PERMISSIONS_JSON = previous; }
   });
   test.each(['creator-disabled', 'session-expired'])('transaction recheck blocks %s after request authentication', async reason => {
-    const passwords = require('../../src/administrative-user-creation.bindings').repositoriesAndServices.passwords;
+    const passwords = require('../../src/bindings/administrative-user-creation.bindings').repositoriesAndServices.passwords;
     const original = passwords.hashPassword;
     passwords.hashPassword = async password => {
       const hash = await original(password);

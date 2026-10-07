@@ -32,7 +32,7 @@ integration('WF-002 isolated MySQL integration', () => {
       PARTICIPANT_RESPONSIBILITIES_JSON: '["VIEW_PROGRAMS","CREATE_OWN_REGISTRATIONS","VIEW_OWN_REGISTRATIONS","CANCEL_OWN_REGISTRATIONS"]' });
     pool = require('../../../src/config/database');
     app = require('../../../src/app');
-    const bindings = require('../../../src/participant-authentication.bindings');
+    const bindings = require('../../../src/bindings/participant-authentication.bindings');
     sessions = bindings.sessions;
     await bindings.credentials.initialize();
     await request(app).post('/api/v1/auth/participants').send(input).expect(201);

@@ -1,10 +1,10 @@
-const pool=require('./config/database');
-const {errors}=require('./auth/authentication-errors');
+const pool=require('../config/database');
+const {errors}=require('../auth/authentication-errors');
 const {sessions}=require('./participant-authentication.bindings');
-const {makeManagementRepository}=require('./repositories/training-program-category-management.repository');
-const {makeAdministrativeUserRepository}=require('./repositories/administrative-user-creation.repository');
-const {makeSessionSecurity}=require('./middleware/session-security');
-const audit=require('./repositories/audit.repository');
+const {makeManagementRepository}=require('../repositories/training-program-category-management.repository');
+const {makeAdministrativeUserRepository}=require('../repositories/administrative-user-creation.repository');
+const {makeSessionSecurity}=require('../middleware/session-security');
+const audit=require('../repositories/audit.repository');
 const repository=makeManagementRepository({pool,errors});
 module.exports={repository,transactions:repository,authorization:makeAdministrativeUserRepository({pool,errors,role:'TRAINING_ADMINISTRATOR'}),
   audit:{changed:audit.createManagementAudit},clock:{now:()=>new Date()},

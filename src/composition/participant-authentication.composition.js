@@ -1,4 +1,4 @@
-const { assembleAuthentication } = require('./auth/authentication.composition');
+const { assembleAuthentication } = require('../auth/authentication.composition');
 function assemble(bindings) {
   return assembleAuthentication(bindings, {
     roles: ['PARTICIPANT'], participant: true,

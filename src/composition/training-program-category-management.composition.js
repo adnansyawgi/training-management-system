@@ -1,11 +1,11 @@
 const express=require('express');
-const {errors}=require('./auth/authentication-errors');
-const {makeValidators}=require('./validators/training-program-category-management.validator');
-const {makeService}=require('./services/training-program-category-management.service');
-const {makeFeatureDto}=require('./repositories/training-program-category-management.dto');
-const {makeController}=require('./controllers/system-administrator-bootstrap.controller');
-const {makeResponseCodec}=require('./utils/implementation-response-codec');
-const {makeResponseTransport}=require('./utils/implementation-response-transport');
+const {errors}=require('../auth/authentication-errors');
+const {makeValidators}=require('../validators/training-program-category-management.validator');
+const {makeService}=require('../services/training-program-category-management.service');
+const {makeFeatureDto}=require('../repositories/training-program-category-management.dto');
+const {makeController}=require('../controllers/system-administrator-bootstrap.controller');
+const {makeResponseCodec}=require('../utils/implementation-response-codec');
+const {makeResponseTransport}=require('../utils/implementation-response-transport');
 function assemble(bindings){
   const codec=makeResponseCodec();const service=makeService({...bindings,errors,dto:makeFeatureDto(codec)});
   const validators=makeValidators({errors});

@@ -1,6 +1,6 @@
 const express = require('../../src/node_modules/express');
 const request = require('../../src/node_modules/supertest');
-const { assemble } = require('../../src/program-details.composition');
+const { assemble } = require('../../src/composition/program-details.composition');
 const { makeErrorHandler } = require('../../src/middleware/implementation-errors');
 const correlation = require('../../src/middleware/correlation-id.middleware');
 const row = require('../fixtures/public-program-detail');

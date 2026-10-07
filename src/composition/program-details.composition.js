@@ -1,11 +1,11 @@
 const express = require('express');
-const { makeValidators } = require('./validators/program-details.validator');
-const { makeService } = require('./services/program-details.service');
-const { makeFeatureDto, fields } = require('./repositories/program-details.dto');
-const { makeController } = require('./controllers/system-administrator-bootstrap.controller');
-const { makeResponseCodec } = require('./utils/implementation-response-codec');
-const { makeResponseTransport } = require('./utils/implementation-response-transport');
-const { errors } = require('./auth/authentication-errors');
+const { makeValidators } = require('../validators/program-details.validator');
+const { makeService } = require('../services/program-details.service');
+const { makeFeatureDto, fields } = require('../repositories/program-details.dto');
+const { makeController } = require('../controllers/system-administrator-bootstrap.controller');
+const { makeResponseCodec } = require('../utils/implementation-response-codec');
+const { makeResponseTransport } = require('../utils/implementation-response-transport');
+const { errors } = require('../auth/authentication-errors');
 function assemble({ programs }) {
   if (typeof programs?.findPublicDetail !== 'function') throw new Error('Program detail repository required.');
   const codec = makeResponseCodec();

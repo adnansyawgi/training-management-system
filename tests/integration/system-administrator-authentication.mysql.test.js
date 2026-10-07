@@ -26,7 +26,7 @@ const enabled = process.env.WF004_TEST_DB_PORT && process.env.WF004_TEST_DB_NAME
       SYSTEM_ADMINISTRATOR_PERMISSIONS_JSON: '["ADMIN_USER_CREATE","ADMIN_USER_READ","ADMIN_USER_UPDATE"]',
       SYSTEM_ADMINISTRATOR_ACCESS_SCOPE_JSON: '["ALL_ADMINISTRATIVE_USERS"]', SYSTEM_ADMINISTRATOR_RESPONSIBILITIES_JSON: '["MANAGE_ADMINISTRATIVE_USERS"]' });
     pool = require('../../src/config/database'); app = require('../../src/app');
-    const bindings = require('../../src/participant-authentication.bindings'); sessions = bindings.sessions;
+    const bindings = require('../../src/bindings/participant-authentication.bindings'); sessions = bindings.sessions;
     await bindings.credentials.initialize();
     await request(app).post('/api/v1/auth/system-admin/bootstrap').send(input).expect(201);
   }, 30000);

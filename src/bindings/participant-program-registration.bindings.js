@@ -1,10 +1,10 @@
-const pool = require('./config/database');
-const { errors } = require('./auth/authentication-errors');
+const pool = require('../config/database');
+const { errors } = require('../auth/authentication-errors');
 const { sessions } = require('./participant-authentication.bindings');
-const audit = require('./repositories/audit.repository');
-const { makeSessionSecurity } = require('./middleware/session-security');
-const { makeRegistrationRepository } = require('./repositories/participant-program-registration.repository');
-const { makeNotificationRepository } = require('./repositories/registration-notification.repository');
+const audit = require('../repositories/audit.repository');
+const { makeSessionSecurity } = require('../middleware/session-security');
+const { makeRegistrationRepository } = require('../repositories/participant-program-registration.repository');
+const { makeNotificationRepository } = require('../repositories/registration-notification.repository');
 const repository = makeRegistrationRepository({ pool, errors });
 module.exports = { repository, transactions: repository,
   security: makeSessionSecurity({ sessions, errors, audit: { csrfRejected: (principal, context) => audit.createCsrfRejectionAudit(pool, principal, context) } }),

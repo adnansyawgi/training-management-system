@@ -20,7 +20,7 @@ const enabled = process.env.WF015_TEST_DB_PORT && process.env.WF015_TEST_DB_NAME
       DB_USER: process.env.WF015_TEST_DB_USER || 'root', DB_PASSWORD: process.env.WF015_TEST_DB_PASSWORD, DB_NAME: database, SESSION_SECRET: 'isolated-registration-secret-'.repeat(3), SESSION_COOKIE_SECURE: 'false' });
     const [actors] = await admin.query("SELECT account_identifier FROM users WHERE authentication_method='SYSTEM'");
     process.env.SYSTEM_AUDIT_ACTOR_ACCOUNT_IDENTIFIER = actors[0].account_identifier;
-    pool = require('../../src/config/database'); app = require('../../src/app'); sessions = require('../../src/participant-authentication.bindings').sessions;
+    pool = require('../../src/config/database'); app = require('../../src/app'); sessions = require('../../src/bindings/participant-authentication.bindings').sessions;
     const createUser = async role => {
       const [result] = await admin.execute(`INSERT INTO users (account_identifier, username, name, email, password_hash,
         role_id, role_name, permissions, access_scope, permitted_responsibilities, account_status,
@@ -132,7 +132,7 @@ const enabled = process.env.WF015_TEST_DB_PORT && process.env.WF015_TEST_DB_NAME
     expect((await admin.query('SELECT * FROM report_executions'))[0]).toHaveLength(0);
   });
   test('serialization failure records FAILED, never SUCCESS',async()=>{
-    const binding=require('../../src/report-generation.bindings'),original=binding.reports.read;binding.reports.read=async()=>({rows:[{}],total:1});
+    const binding=require('../../src/bindings/report-generation.bindings'),original=binding.reports.read;binding.reports.read=async()=>({rows:[{}],total:1});
     try{await report().expect(500);}finally{binding.reports.read=original;}
     expect((await admin.query('SELECT status FROM report_executions'))[0]).toEqual([{status:'FAILED'}]);expect((await admin.query("SELECT * FROM audit_records WHERE action='REPORT_GENERATED'"))[0]).toHaveLength(0);
   });

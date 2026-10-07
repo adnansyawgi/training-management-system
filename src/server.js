@@ -10,7 +10,7 @@ console.log('DB Config:', {
 
 const app = require('./app');
 const { readAuthenticationConfig } = require('./config/authentication');
-const { credentials, sessions } = require('./participant-authentication.bindings');
+const { credentials, sessions } = require('./bindings/participant-authentication.bindings');
 const port = Number(process.env.PORT || 3000);
 async function start() {
   readAuthenticationConfig();

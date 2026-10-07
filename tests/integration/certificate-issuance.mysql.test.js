@@ -20,7 +20,7 @@ const enabled = process.env.WF014_TEST_DB_PORT && process.env.WF014_TEST_DB_NAME
       DB_USER: process.env.WF014_TEST_DB_USER || 'root', DB_PASSWORD: process.env.WF014_TEST_DB_PASSWORD, DB_NAME: database, SESSION_SECRET: 'isolated-registration-secret-'.repeat(3), SESSION_COOKIE_SECURE: 'false' });
     const [actors] = await admin.query("SELECT account_identifier FROM users WHERE authentication_method='SYSTEM'");
     process.env.SYSTEM_AUDIT_ACTOR_ACCOUNT_IDENTIFIER = actors[0].account_identifier;
-    pool = require('../../src/config/database'); app = require('../../src/app'); sessions = require('../../src/participant-authentication.bindings').sessions;
+    pool = require('../../src/config/database'); app = require('../../src/app'); sessions = require('../../src/bindings/participant-authentication.bindings').sessions;
     const createUser = async role => {
       const [result] = await admin.execute(`INSERT INTO users (account_identifier, username, name, email, password_hash,
         role_id, role_name, permissions, access_scope, permitted_responsibilities, account_status,
@@ -109,7 +109,7 @@ const enabled = process.env.WF014_TEST_DB_PORT && process.env.WF014_TEST_DB_NAME
   });
   test('real reference collisions retry and exhausted attempts roll back without 409',async()=>{
     const first=await write(await source()).expect(201),second=await source(full,'R-reference-second');
-    const binding=require('../../src/certificate-eligibility-issuance.bindings'),original=binding.repository.insertWithReferenceRetry;
+    const binding=require('../../src/bindings/certificate-eligibility-issuance.bindings'),original=binding.repository.insertWithReferenceRetry;
     const {makeCertificateRepository}=require('../../src/repositories/certificate-eligibility-issuance.repository'),{errors}=require('../../src/auth/authentication-errors'),{ulid}=require('../../src/node_modules/ulid');
     const reference=jest.fn().mockReturnValueOnce(first.body.certificateNumber).mockReturnValue('C-'+ulid());
     binding.repository.insertWithReferenceRetry=makeCertificateRepository({pool,errors,reference,attempts:3}).insertWithReferenceRetry;
@@ -144,7 +144,7 @@ const enabled = process.env.WF014_TEST_DB_PORT && process.env.WF014_TEST_DB_NAME
     await request(app).post('/api/v1/admin/certificates').set('Cookie',cookie).send({registrationId:id,certificateType:'T',certificateTitle:'Title'}).expect(403);
   });
   test('live account/session recheck precedes issuance',async()=>{
-    const id=await source(),binding=require('../../src/certificate-eligibility-issuance.bindings'),original=binding.authorization.assertCreator;
+    const id=await source(),binding=require('../../src/bindings/certificate-eligibility-issuance.bindings'),original=binding.authorization.assertCreator;
     binding.authorization.assertCreator=async(connection,context)=>{await admin.execute("UPDATE users SET account_status='DISABLED' WHERE user_id=?",[managerId]);return original(connection,context);};
     try{await write(id).expect(403);}finally{binding.authorization.assertCreator=original;await admin.execute("UPDATE users SET account_status='ACTIVE' WHERE user_id=?",[managerId]);}
     binding.authorization.assertCreator=async(connection,context)=>{await admin.execute('UPDATE sessions SET expires_at=UTC_TIMESTAMP()-INTERVAL 1 MINUTE WHERE session_id=?',[context.sessionId]);return original(connection,context);};

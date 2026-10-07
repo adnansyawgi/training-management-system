@@ -1,10 +1,10 @@
-const { makeService } = require('./services/system-administrator-bootstrap.service');
-const { makeValidators } = require('./validators/system-administrator-bootstrap.validator');
-const { makeController } = require('./controllers/system-administrator-bootstrap.controller');
-const { makeRouter } = require('./routes/system-administrator-bootstrap.routes');
-const { makeResponseCodec } = require('./utils/implementation-response-codec');
-const { makeResponseTransport } = require('./utils/implementation-response-transport');
-const { errors } = require('./auth/authentication-errors');
+const { makeService } = require('../services/system-administrator-bootstrap.service');
+const { makeValidators } = require('../validators/system-administrator-bootstrap.validator');
+const { makeController } = require('../controllers/system-administrator-bootstrap.controller');
+const { makeRouter } = require('../routes/system-administrator-bootstrap.routes');
+const { makeResponseCodec } = require('../utils/implementation-response-codec');
+const { makeResponseTransport } = require('../utils/implementation-response-transport');
+const { errors } = require('../auth/authentication-errors');
 function assemble({ repositoriesAndServices, requestContext }) {
   for (const name of ['keys.verify', 'passwords.hashPassword', 'bootstrap.withExclusiveEligibility',
     'users.hasActiveSystemAdministrator', 'roles.resolve', 'clock.now', 'accounts.createWithIdentifierRetry', 'audit.bootstrap']) {

@@ -1,6 +1,6 @@
 const express = require('../../src/node_modules/express');
 const request = require('../../src/node_modules/supertest');
-const { assemble } = require('../../src/participant-authentication.composition');
+const { assemble } = require('../../src/composition/participant-authentication.composition');
 const { errorCodes, errors } = require('../../src/auth/authentication-errors');
 const { makeErrorHandler, wrapJsonParser } = require('../../src/middleware/implementation-errors');
 const correlation = require('../../src/middleware/correlation-id.middleware');

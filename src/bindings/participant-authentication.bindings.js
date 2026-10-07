@@ -1,10 +1,10 @@
-const pool = require('./config/database');
-const repository = require('./repositories/authentication.repository');
-const audit = require('./repositories/audit.repository');
-const { makeCredentials } = require('./auth/credentials');
-const { makeDatabaseSessions } = require('./auth/database-sessions');
-const { makeAuthenticationSecurity } = require('./auth/authentication-security');
-const { errors, errorCodes } = require('./auth/authentication-errors');
+const pool = require('../config/database');
+const repository = require('../repositories/authentication.repository');
+const audit = require('../repositories/audit.repository');
+const { makeCredentials } = require('../auth/credentials');
+const { makeDatabaseSessions } = require('../auth/database-sessions');
+const { makeAuthenticationSecurity } = require('../auth/authentication-security');
+const { errors, errorCodes } = require('../auth/authentication-errors');
 const sessions = makeDatabaseSessions({ pool });
 const credentials = makeCredentials();
 const security = makeAuthenticationSecurity({ pool, repository, audit, sessions, errors });

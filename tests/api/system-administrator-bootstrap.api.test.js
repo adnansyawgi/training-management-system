@@ -1,6 +1,6 @@
 const express = require('../../src/node_modules/express');
 const request = require('../../src/node_modules/supertest');
-const { assemble } = require('../../src/system-administrator-bootstrap.composition');
+const { assemble } = require('../../src/composition/system-administrator-bootstrap.composition');
 const { errors } = require('../../src/auth/authentication-errors');
 const errorHandler = require('../../src/middleware/error-handler.middleware');
 const correlation = require('../../src/middleware/correlation-id.middleware');

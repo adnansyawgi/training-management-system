@@ -1,4 +1,4 @@
-const { assembleAuthentication } = require('./auth/authentication.composition');
+const { assembleAuthentication } = require('../auth/authentication.composition');
 function assemble(bindings) {
   const requestContext = req => ({ ...bindings.requestContext(req), authenticationRole: 'SYSTEM_ADMINISTRATOR' });
   return assembleAuthentication({ ...bindings, requestContext }, {
