@@ -40,7 +40,7 @@ function makeCatalogueRepository({ pool }) {
       } finally { connection.release(); }
     },
     async activeCategories() {
-      const [rows] = await pool.execute("SELECT category_id, name FROM program_categories WHERE status = 'ACTIVE' ORDER BY name ASC, category_id ASC");
+      const [rows] = await pool.execute("SELECT category_id, name FROM program_categories WHERE status = 'ACTIVE' ORDER BY name, category_id");
       return rows;
     }
   };

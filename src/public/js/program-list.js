@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await response.json();
       if (!Array.isArray(data.items) || data.items.length > pageSize || data.page !== page || data.pageSize !== pageSize ||
           !Number.isSafeInteger(data.total) || data.total < 0 || data.items.some(item => !item || !Number.isSafeInteger(item.programId) || item.programId < 1) ||
-          !detailsBase.startsWith('/') || detailsBase.startsWith('//')) throw new Error('Invalid catalogue response.');
+          !detailsBase.startsWith('/') || detailsBase.startsWith('//')) { showError('Unable to connect to the service. Please try again.'); return; }
       const fragment = document.createDocumentFragment();
       data.items.forEach(program => {
         const tr = document.createElement('tr');
@@ -55,8 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!succeeded) pageInfo.textContent = '';
     }
   }
-  form.addEventListener('submit', event => { event.preventDefault(); if (!pending) { page = 1; load(); } });
-  previous.addEventListener('click', () => { if (!pending && !previous.disabled && page > 1) { page -= 1; load(); } });
-  next.addEventListener('click', () => { if (!pending && !next.disabled && page * pageSize < total) { page += 1; load(); } });
-  load();
+  form.addEventListener('submit', event => { event.preventDefault(); if (!pending) { page = 1; void load(); } });
+  previous.addEventListener('click', () => { if (!pending && !previous.disabled && page > 1) { page -= 1; void load(); } });
+  next.addEventListener('click', () => { if (!pending && !next.disabled && page * pageSize < total) { page += 1; void load(); } });
+  void load();
 });

@@ -27,7 +27,11 @@ function makeReportExecutionRepository({pool,errors,authorization,audit,clock}){
         try{
           const execution={reportExecutionId:codec.id(id),reportName:definition.name,reportType:definition.type,generatedAt:event.now,generatedBy:codec.id(context.principal.userId),status:'SUCCESS'};
           const artifact=await materialize(connection,execution);
-          if(!artifact||!['json','csv'].includes(artifact.kind)||typeof artifact.body!=='string'||typeof artifact.contentType!=='string')throw errors.integrity();
+          if(!artifact||!['json','csv'].includes(artifact.kind)||typeof artifact.body!=='string'||typeof artifact.contentType!=='string') {
+        // Failure must enter the catch block for rollback or failure auditing.
+        // noinspection ExceptionCaughtLocallyJS
+        throw errors.integrity();
+      }
           await connection.execute("UPDATE report_executions SET status='SUCCESS' WHERE report_execution_id=?",[id]);
           await audit.reportEvent(connection,{...event,id,action:'REPORT_GENERATED',result:'SUCCESS'});
           if(input.output==='csv')await audit.reportEvent(connection,{...event,id,action:'REPORT_DOWNLOADED',result:'SUCCESS'});
@@ -39,6 +43,8 @@ function makeReportExecutionRepository({pool,errors,authorization,audit,clock}){
             await audit.reportEvent(connection,{...event,id,action:'REPORT_GENERATION_FAILED',result:'FAILURE'});
             await connection.commit();inserted=false;
           }catch{ /* A deadlock/connection failure can invalidate the savepoint. */ }
+          // The outer catch must perform transaction recovery.
+          // noinspection ExceptionCaughtLocallyJS
           throw errors.integrity();
         }
       }catch(error){
@@ -50,6 +56,8 @@ function makeReportExecutionRepository({pool,errors,authorization,audit,clock}){
             await connection.beginTransaction();await authorize(connection,context);const failedId=await insert(connection,event);
             await audit.reportEvent(connection,{...event,id:failedId,action:'REPORT_GENERATION_FAILED',result:'FAILURE'});await connection.commit();
           }catch{try{await connection.rollback();}catch{}}
+          // The outer catch must perform transaction recovery.
+          // noinspection ExceptionCaughtLocallyJS
           throw errors.integrity();
         }
         throw error;

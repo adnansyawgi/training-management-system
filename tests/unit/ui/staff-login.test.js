@@ -5,7 +5,8 @@ const ejs = require('../../../src/node_modules/ejs');
 const { JSDOM } = require('../../../src/node_modules/jsdom');
 const ui = require('../../../src/config/ui');
 const template = fs.readFileSync(path.join(__dirname, '../../../src/views/auth/admin-login.ejs'), 'utf8');
-const script = fs.readFileSync(path.join(__dirname, '../../../src/public/js/staff-login.js'), 'utf8');
+const sharedScript = fs.readFileSync(path.join(__dirname, '../../../src/public/js/account-forms.js'), 'utf8');
+const script = sharedScript + '\n' + fs.readFileSync(path.join(__dirname, '../../../src/public/js/staff-login.js'), 'utf8');
 let dom, document, fetchMock, navigate;
 const field = id => document.getElementById(id);
 const submit = async () => {

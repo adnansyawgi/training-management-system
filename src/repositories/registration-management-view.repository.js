@@ -16,7 +16,11 @@ function makeRegistrationManagementRepository({ pool, errors, sorts, requiredSco
       await connection.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
       await connection.query('START TRANSACTION WITH CONSISTENT SNAPSHOT, READ ONLY');
       const [actors] = await connection.execute('SELECT a.user_id FROM users a WHERE '+access, values);
-      if (actors.length !== 1) throw errors.forbidden();
+      if (actors.length !== 1) {
+        // Failure must enter the catch block for rollback or failure auditing.
+        // noinspection ExceptionCaughtLocallyJS
+        throw errors.forbidden();
+      }
       const result = await operation(connection, values);
       await connection.commit(); return result;
     } catch (error) { try { await connection.rollback(); } catch { /* preserve failure */ } throw error; }
@@ -29,7 +33,11 @@ function makeRegistrationManagementRepository({ pool, errors, sorts, requiredSco
       if (principal?.role !== 'TRAINING_ADMINISTRATOR') throw errors.forbidden();
       const scope = { name: requiredScope, actorUserId: positiveId(principal.userId) };
       const [actors] = await pool.execute('SELECT a.user_id FROM users a WHERE '+access, scopeValues(scope));
-      if (actors.length !== 1) throw errors.forbidden();
+      if (actors.length !== 1) {
+        // Failure must enter the catch block for rollback or failure auditing.
+        // noinspection ExceptionCaughtLocallyJS
+        throw errors.forbidden();
+      }
       return scope;
     },
     async adminPage(input, scope) {

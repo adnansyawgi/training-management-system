@@ -14,7 +14,7 @@ function makePageRouter(bindings){
     res.render('trainer/programs',{...ui,programs:result.rows.map(program),page:currentPage,total:result.total});
   }catch(error){fail(error,next);}});
   router.get(ui.trainerLandingUrl+'/:programId/attendance',...access,async(req,res,next)=>{try{
-    const programId=v.positiveId(req.params.programId);if(!Number.isSafeInteger(Number(programId)))throw v.bad();const currentPage=page(req),result=await bindings.pages.roster(req.principal,programId,currentPage);
+    const programId=v.positiveId(req.params.programId);if(!Number.isSafeInteger(Number(programId)))return next(errors.validation());const currentPage=page(req),result=await bindings.pages.roster(req.principal,programId,currentPage);
     const timezone=process.env.BUSINESS_TIMEZONE||'Asia/Kuala_Lumpur';new Intl.DateTimeFormat('en',{timeZone:timezone});
     const selected=program(result.program),assigned=result.assignedPrograms.map(program);if(!assigned.some(row=>row.programId===selected.programId))assigned.push(selected);
     res.render('trainer/attendance-management',{...ui,csrfToken:res.locals.csrfToken,businessTimezone:timezone,program:selected,assignedPrograms:assigned,page:currentPage,total:result.total,

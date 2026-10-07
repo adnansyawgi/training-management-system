@@ -1,6 +1,6 @@
 const {sameId}=require('../validators/implementation-validation');
 const certificateSelect="SELECT c.*,DATE_FORMAT(c.completion_date,'%Y-%m-%d') AS completion_date,DATE_FORMAT(c.issue_date,'%Y-%m-%d') AS issue_date FROM certificates c";
-function makeCertificateRepository({pool,errors,reference,attempts}){
+function makeCertificateRepository({errors,reference,attempts}){
   if(typeof reference!=='function'||!Number.isInteger(attempts)||attempts<1)throw new Error('Certificate reference binding required.');
   return {
     async lockEligibility(connection,id){

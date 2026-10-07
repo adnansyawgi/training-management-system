@@ -1,3 +1,4 @@
+/* global businessTime */
 'use strict';
 document.addEventListener('DOMContentLoaded', () => {
   const root = document.querySelector('[data-workflow="WF-010"]');
@@ -31,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const detailsBase = root.dataset.programDetailsBaseUrl;
       if (!Array.isArray(data.items) || data.items.length > pageSize || data.page !== page || data.pageSize !== pageSize ||
           !Number.isSafeInteger(data.total) || data.total < 0 || typeof detailsBase !== 'string' || !detailsBase.startsWith('/') || detailsBase.startsWith('//') ||
-          data.items.some(item => !item || !Number.isSafeInteger(item.registrationId) || item.registrationId < 1 || !Number.isSafeInteger(item.programId) || item.programId < 1)) throw new Error('Invalid list.');
+          data.items.some(item => !item || !Number.isSafeInteger(item.registrationId) || item.registrationId < 1 || !Number.isSafeInteger(item.programId) || item.programId < 1)) { show('Unable to connect to the service. Please try again.'); return; }
       const fragment = document.createDocumentFragment();
       data.items.forEach(item => {
         const tr = document.createElement('tr');
@@ -50,9 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch { show('Unable to connect to the service. Please try again.'); }
     finally { pending = false; apply.disabled = false; previous.disabled = !success || page <= 1; next.disabled = !success || page * pageSize >= total; if (!success) field('pageInfo').textContent = ''; }
   }
-  field('registrationFilter').addEventListener('submit', event => { event.preventDefault(); if (!pending) { page = 1; load(); } });
-  previous.addEventListener('click', () => { if (!pending && !previous.disabled && page > 1) { page--; load(); } });
-  next.addEventListener('click', () => { if (!pending && !next.disabled && page * pageSize < total) { page++; load(); } });
+  field('registrationFilter').addEventListener('submit', event => { event.preventDefault(); if (!pending) { page = 1; void load(); } });
+  previous.addEventListener('click', () => { if (!pending && !previous.disabled && page > 1) { page--; void load(); } });
+  next.addEventListener('click', () => { if (!pending && !next.disabled && page * pageSize < total) { page++; void load(); } });
   back.addEventListener('click', () => { if (!pending) close(); });
   confirm.addEventListener('click', async () => {
     if (pending || !selected) return;
@@ -76,5 +77,5 @@ document.addEventListener('DOMContentLoaded', () => {
       if (success) { close(); await load(true); }
     }
   });
-  load();
+  void load();
 });

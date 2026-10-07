@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const program = await response.json();
     if (!program || !Number.isSafeInteger(program.programId) || String(program.programId) !== programId ||
         !['OPEN', 'CLOSED'].includes(program.status) || !Number.isInteger(program.capacity) || program.capacity < 1 ||
-        !Number.isInteger(program.availableSeats)) throw new Error('Invalid public detail.');
+        !Number.isInteger(program.availableSeats)) { show('Unable to connect to the service. Please try again.'); return; }
     field('programName').textContent = program.name;
     field('programDescription').textContent = program.description;
     const details = [

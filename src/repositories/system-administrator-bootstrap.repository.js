@@ -8,10 +8,18 @@ function makeBootstrapRepository({ pool, errors, generateIdentifier = () => `A-$
     let lockName, locked = false;
     try {
       const [database] = await connection.execute('SELECT DATABASE() AS database_name');
-      if (!database[0]?.database_name) throw new Error('Bootstrap database is not configured.');
+      if (!database[0]?.database_name) {
+        // Failure must enter the catch block for rollback or failure auditing.
+        // noinspection ExceptionCaughtLocallyJS
+        throw new Error('Bootstrap database is not configured.');
+      }
       lockName = 'tms-bootstrap-' + createHash('sha256').update(database[0].database_name).digest('hex').slice(0, 48);
       const [locks] = await connection.execute('SELECT GET_LOCK(?, 10) AS acquired', [lockName]);
-      if (Number(locks[0]?.acquired) !== 1) throw new Error('Bootstrap lock acquisition failed.');
+      if (Number(locks[0]?.acquired) !== 1) {
+        // Failure must enter the catch block for rollback or failure auditing.
+        // noinspection ExceptionCaughtLocallyJS
+        throw new Error('Bootstrap lock acquisition failed.');
+      }
       locked = true;
       await connection.beginTransaction();
       const result = await callback(connection);

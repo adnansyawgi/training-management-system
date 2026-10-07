@@ -4,14 +4,17 @@ function parseJsonEnvironment(name) {
     error.code = 'ROLE_CONFIGURATION_ERROR';
     throw error;
   }
+  let value;
   try {
-    const value = JSON.parse(process.env[name]);
-    if (!Array.isArray(value)) throw new Error(`${name} must be a JSON array.`);
-    return value;
+    value = JSON.parse(process.env[name]);
   } catch (error) {
     error.code = 'ROLE_CONFIGURATION_ERROR';
     throw error;
   }
+  if (!Array.isArray(value)) {
+    throw Object.assign(new Error(`${name} must be a JSON array.`), { code: 'ROLE_CONFIGURATION_ERROR' });
+  }
+  return value;
 }
 
 function resolveParticipantRoleDefaults() {

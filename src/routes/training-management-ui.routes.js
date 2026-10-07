@@ -10,11 +10,11 @@ function makePageRouter(bindings){
     router.get(url,bindings.security.requireSession,bindings.security.requireRole('TRAINING_ADMINISTRATOR'),async(req,res,next)=>{
       try{
         v.object(req.query,kind==='programs'?['page','pageSize','edit','categoryPage','trainerPage']:['page','pageSize','edit']);
-        if(Object.values(req.query).some(value=>typeof value!=='string'))throw v.bad();
+        if(Object.values(req.query).some(value=>typeof value!=='string'))return next(errors.validation());
         const {page,pageSize}=v.page(req.query);const result=await bindings.repository.page(kind,page,pageSize);
         const timezone=process.env.BUSINESS_TIMEZONE || 'Asia/Kuala_Lumpur';new Intl.DateTimeFormat('en',{timeZone:timezone});
         let editing=null;
-        if(req.query.edit!==undefined){codec.id(v.positiveId(req.query.edit));const row=await bindings.repository[kind==='programs'?'getProgram':'getCategory'](req.query.edit);if(!row)throw errors.notFound();editing=kind==='programs'?dto.adminProgram(row):dto.createdCategory(row);}
+        if(req.query.edit!==undefined){codec.id(v.positiveId(req.query.edit));const row=await bindings.repository[kind==='programs'?'getProgram':'getCategory'](req.query.edit);if(!row)return next(errors.notFound());editing=kind==='programs'?dto.adminProgram(row):dto.createdCategory(row);}
         const model={...ui,csrfToken:res.locals.csrfToken,kind,businessTimezone:timezone,editing,page,pageSize,total:result.total,
           records:result.rows.map(kind==='programs'?dto.adminProgram:dto.createdCategory),localDateTime:value=>localDateTime(value,timezone)};
         if(kind==='programs'){

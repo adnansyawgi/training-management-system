@@ -5,7 +5,11 @@ function makeTrainerAttendancePageRepository({pool,errors}){
     try{
       await connection.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');await connection.query('START TRANSACTION WITH CONSISTENT SNAPSHOT, READ ONLY');
       const [users]=await connection.execute("SELECT user_id FROM users WHERE user_id=? AND role_id='TRAINER' AND role_name='TRAINER' AND account_status='ACTIVE' AND (authentication_method IS NULL OR authentication_method<>'SYSTEM') AND (lockout_until IS NULL OR lockout_until<=UTC_TIMESTAMP())",[userId]);
-      if(users.length!==1)throw errors.forbidden();const result=await operation(connection,userId);await connection.commit();return result;
+      if(users.length!==1) {
+        // Failure must enter the catch block for rollback or failure auditing.
+        // noinspection ExceptionCaughtLocallyJS
+        throw errors.forbidden();
+      }const result=await operation(connection,userId);await connection.commit();return result;
     }catch(error){try{await connection.rollback();}catch{}throw error;}finally{connection.release();}
   }
   const programSelect="SELECT program_id,code,name,trainer_user_id,DATE_FORMAT(training_date,'%Y-%m-%d') AS training_date FROM training_programs";
@@ -23,7 +27,7 @@ function makeTrainerAttendancePageRepository({pool,errors}){
       const [rows]=await connection.execute(`SELECT r.registration_id,r.reference_no,x.name AS participant_name,a.status,
         DATE_FORMAT(a.attendance_date,'%Y-%m-%d') AS attendance_date,a.check_in_at,a.check_out_at,a.verification_method,a.evidence_reference,a.remarks
         FROM registrations r JOIN participants x ON x.participant_id=r.participant_id LEFT JOIN attendance a ON a.registration_id=r.registration_id
-        WHERE r.program_id=? AND r.status='REGISTERED' ORDER BY r.registration_id ASC LIMIT 100 OFFSET ?`,[programId,(page-1)*100]);
+        WHERE r.program_id=? AND r.status='REGISTERED' ORDER BY r.registration_id LIMIT 100 OFFSET ?`,[programId,(page-1)*100]);
       return {program,assignedPrograms:assigned.rows,rows,total:Number(count[0].total)};
     })
   };

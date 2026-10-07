@@ -1,3 +1,4 @@
+/* global accountForms */
 'use strict';
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('systemAdminBootstrapForm');
@@ -6,16 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const button = document.getElementById('submitButton');
   const key = document.getElementById('staticAdministrationKey');
   const password = document.getElementById('password');
-  const show = (text, ok = false) => {
-    message.textContent = text;
-    message.className = `alert ${ok ? 'alert-success' : 'alert-danger'}`;
-  };
-  const validatePassword = () => {
-    const value = password.value;
-    const valid = value.length >= 12 && /[A-Z]/.test(value) && /[a-z]/.test(value) && /[0-9]/.test(value) && /[^A-Za-z0-9]/.test(value);
-    password.setCustomValidity(valid ? '' : 'Password does not meet the required policy.');
-  };
-  password.addEventListener('input', validatePassword);
+  const show = (text, ok = false) => accountForms.showMessage(message, text, ok);
+  const validatePassword = accountForms.bindPasswordPolicy(password);
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (button.disabled) return;

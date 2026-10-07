@@ -4,7 +4,7 @@ function makeSessionSecurity({ sessions, errors, audit }) {
     async requireSession(req, res, next) {
       try {
         const principal = await sessions.load(req);
-        if (!principal) throw errors.authentication();
+        if (!principal) return next(errors.authentication());
         req.principal = principal;
         req.authenticatedSessionId = sessions.readId(req);
         res.locals.csrfToken = principal.csrfToken;
@@ -24,7 +24,7 @@ function makeSessionSecurity({ sessions, errors, audit }) {
           timingSafeEqual(Buffer.from(supplied), Buffer.from(expected));
         if (!valid) {
           await audit.csrfRejected(req.principal, { correlationId: req.correlationId, ipAddress: req.ip, userAgent: req.get('user-agent') });
-          throw errors.forbidden();
+          return next(errors.forbidden());
         }
         return next();
       } catch (error) { return next(error); }

@@ -4,11 +4,19 @@ function makeCertificatePageRepository({pool,errors}){return {async read(princip
   try{
     await connection.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');await connection.query('START TRANSACTION WITH CONSISTENT SNAPSHOT, READ ONLY');
     const [actors]=await connection.execute("SELECT user_id FROM users WHERE user_id=? AND role_id='TRAINING_ADMINISTRATOR' AND role_name=role_id AND account_status='ACTIVE' AND (authentication_method IS NULL OR authentication_method<>'SYSTEM') AND (lockout_until IS NULL OR lockout_until<=UTC_TIMESTAMP())",[positiveId(principal.userId)]);
-    if(actors.length!==1)throw errors.forbidden();
+    if(actors.length!==1) {
+        // Failure must enter the catch block for rollback or failure auditing.
+        // noinspection ExceptionCaughtLocallyJS
+        throw errors.forbidden();
+      }
     const [count]=await connection.execute('SELECT COUNT(*) AS total FROM training_programs');
-    const [programs]=await connection.execute('SELECT program_id,code,name FROM training_programs ORDER BY program_id ASC LIMIT 100 OFFSET ?',[(programPage-1)*100]);
+    const [programs]=await connection.execute('SELECT program_id,code,name FROM training_programs ORDER BY program_id LIMIT 100 OFFSET ?',[(programPage-1)*100]);
     let selected=programs[0]||null;
-    if(programId!==undefined){const [rows]=await connection.execute('SELECT program_id,code,name FROM training_programs WHERE program_id=?',[programId]);selected=rows[0]||null;if(!selected)throw errors.validation();}
+    if(programId!==undefined){const [rows]=await connection.execute('SELECT program_id,code,name FROM training_programs WHERE program_id=?',[programId]);selected=rows[0]||null;if(!selected) {
+        // Failure must enter the catch block for rollback or failure auditing.
+        // noinspection ExceptionCaughtLocallyJS
+        throw errors.validation();
+      }}
     let rows=[],total=0;
     if(selected){
       const source=`FROM registrations r JOIN participants x ON x.participant_id=r.participant_id JOIN attendance a ON a.registration_id=r.registration_id

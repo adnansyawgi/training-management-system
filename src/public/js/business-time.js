@@ -3,15 +3,22 @@
   else root.businessTime = factory();
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
+  function formatter(timezone) {
+    // h23 is required: midnight must remain 00:00 rather than 24:00.
+    const options = /** @type {Intl.DateTimeFormatOptions & {hourCycle: 'h23'}} */ ({
+      timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+    });
+    return new Intl.DateTimeFormat('en-CA', options);
+  }
   function scheduledStart(day, time, timezone) {
     if (typeof timezone !== 'string' || !timezone) throw new Error('Business timezone required.');
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !/^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(time)) throw new Error('Invalid schedule.');
     const desired = Date.parse(day + 'T' + time + 'Z');
     if (!Number.isFinite(desired) || new Date(desired).toISOString().slice(0, 19) !== day + 'T' + time) throw new Error('Invalid schedule.');
-    const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+    const dateFormatter = formatter(timezone);
     const local = value => {
-      const parts = Object.fromEntries(formatter.formatToParts(new Date(value)).filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
+      const parts = Object.fromEntries(dateFormatter.formatToParts(new Date(value)).filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
       return Date.parse(`${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}Z`);
     };
     let instant = desired;
@@ -31,7 +38,7 @@
   function localDateTime(value, timezone) {
     const date = new Date(value);
     if (!Number.isFinite(date.getTime())) throw new Error('Invalid timestamp.');
-    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23' })
+    const parts = Object.fromEntries(formatter(timezone)
       .formatToParts(date).filter(part=>part.type!=='literal').map(part=>[part.type,part.value]));
     return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`;
   }

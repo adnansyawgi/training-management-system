@@ -10,7 +10,7 @@ function makePageRouter(bindings, programs) {
     makeValidators({ errors }).page, async (req, res, next) => {
       try {
         const row = await programs.findPublicDetail(req.validatedInput.programId);
-        if (!row) throw errors.notFound();
+        if (!row) return next(errors.notFound());
         const participant = await bindings.repository.profile(req.principal.userId);
         res.render('registrations/registration-confirmation', { ...ui, participant, program: dto.programDetail(row),
           csrfToken: res.locals.csrfToken, programDetailsUrl: ui.programDetailsBaseUrl + '/' + req.validatedInput.programId });

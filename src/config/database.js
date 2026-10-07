@@ -1,6 +1,7 @@
 const mysql = require('mysql2/promise');
 
-const pool = mysql.createPool({
+// mysql2/promise returns a promise pool; its CommonJS export is otherwise inferred as the callback API.
+const pool = /** @type {import('mysql2/promise').Pool & {execute: (sql: string, values?: any[]) => Promise<[import('mysql2').QueryResult, import('mysql2').FieldPacket[]]>}} */ (mysql.createPool({
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER,
@@ -13,6 +14,6 @@ const pool = mysql.createPool({
   supportBigNumbers: true,
   bigNumberStrings: true,
   timezone: 'Z'
-});
+}));
 
 module.exports = pool;

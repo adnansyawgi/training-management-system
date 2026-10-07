@@ -3,8 +3,8 @@ const {errors}=require('../auth/authentication-errors');
 const {makeResponseCodec}=require('../utils/implementation-response-codec');
 function makePageRouter(bindings){const router=express.Router(),codec=makeResponseCodec();
   router.get(ui.certificateManagementUrl,bindings.security.requireSession,bindings.security.requireRole('TRAINING_ADMINISTRATOR'),async(req,res,next)=>{try{
-    v.object(req.query,['programId','programPage','page']);if(Object.values(req.query).some(value=>typeof value!=='string'))throw v.bad();
-    let programId;if(req.query.programId!==undefined){programId=v.positiveId(req.query.programId);if(!Number.isSafeInteger(Number(programId)))throw v.bad();}
+    v.object(req.query,['programId','programPage','page']);if(Object.values(req.query).some(value=>typeof value!=='string'))return next(errors.validation());
+    let programId;if(req.query.programId!==undefined){programId=v.positiveId(req.query.programId);if(!Number.isSafeInteger(Number(programId)))return next(errors.validation());}
     const page=v.page({page:req.query.page,pageSize:'100'}).page,programPage=v.page({page:req.query.programPage,pageSize:'100'}).page;
     const result=await bindings.pages.read(req.principal,{programId,page,programPage});
     const project=row=>({programId:codec.id(row.program_id),code:row.code,name:row.name});

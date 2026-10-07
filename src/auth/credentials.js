@@ -1,10 +1,14 @@
 const argon2 = require('argon2');
 const { randomBytes } = require('node:crypto');
+// Preserve the Buffer return type across Node's generic declaration versions.
+const secureBytes = /** @type {(size: number) => Buffer} */ (randomBytes);
+const { hashPassword } = require('./password-hasher');
 function makeCredentials() {
+  /** @type {Promise<string> | undefined} */
   let dummyHash;
   function initialize() {
     // Random, unusable credential; same Argon2id cost as WF-001 account creation.
-    if (!dummyHash) dummyHash = argon2.hash(randomBytes(32), { type: argon2.argon2id });
+    if (!dummyHash) dummyHash = hashPassword(secureBytes(32).toString('hex'));
     return dummyHash;
   }
   return {

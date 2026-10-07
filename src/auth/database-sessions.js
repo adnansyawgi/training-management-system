@@ -1,4 +1,6 @@
 const { randomBytes, createHmac, timingSafeEqual } = require('node:crypto');
+// Preserve the Buffer return type across Node's generic declaration versions.
+const secureBytes = /** @type {(size: number) => Buffer} */ (randomBytes);
 const { readAuthenticationConfig } = require('../config/authentication');
 const { positiveId, sameId } = require('../validators/implementation-validation');
 
@@ -25,10 +27,10 @@ function makeDatabaseSessions({ pool, config = readAuthenticationConfig, now = (
     readId, invalidate,
     async prepare(unit, context, principal) {
       const cfg = config();
-      const sessionId = randomBytes(32).toString('hex');
+      const sessionId = secureBytes(32).toString('hex');
       const expiresAt = new Date(unit.now.getTime() + cfg.idleMs);
       const absoluteExpiresAt = new Date(unit.now.getTime() + cfg.absoluteMs);
-      const data = { ...principal, absoluteExpiresAt: absoluteExpiresAt.toISOString(), csrfToken: randomBytes(32).toString('hex') };
+      const data = { ...principal, absoluteExpiresAt: absoluteExpiresAt.toISOString(), csrfToken: secureBytes(32).toString('hex') };
       await unit.connection.execute('INSERT INTO sessions (session_id, user_id, session_data, expires_at) VALUES (?, ?, ?, ?)',
         [sessionId, principal.userId, JSON.stringify(data), expiresAt]);
       unit.preparedSessionIds.push(sessionId);

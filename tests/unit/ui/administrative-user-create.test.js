@@ -2,7 +2,8 @@ const fs = require('fs'); const path = require('path'); const vm = require('vm')
 const ejs = require('../../../src/node_modules/ejs'); const { JSDOM } = require('../../../src/node_modules/jsdom');
 const ui = require('../../../src/config/ui');
 const template = fs.readFileSync(path.join(__dirname, '../../../src/views/admin/user-account-management.ejs'), 'utf8');
-const script = fs.readFileSync(path.join(__dirname, '../../../src/public/js/administrative-user-create.js'), 'utf8');
+const sharedScript = fs.readFileSync(path.join(__dirname, '../../../src/public/js/account-forms.js'), 'utf8');
+const script = sharedScript + '\n' + fs.readFileSync(path.join(__dirname, '../../../src/public/js/administrative-user-create.js'), 'utf8');
 const values = { username: 'entered-staff', name: 'Staff', email: 'staff@example.test', password: 'StrongPassword@123', role: 'TRAINER' };
 let dom, document, fetchMock;
 const field = id => document.getElementById(id);

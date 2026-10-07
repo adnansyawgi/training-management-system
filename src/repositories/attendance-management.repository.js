@@ -1,6 +1,6 @@
 const {positiveId}=require('../validators/implementation-validation');
 const attendanceSelect="SELECT a.*,DATE_FORMAT(a.attendance_date,'%Y-%m-%d') AS attendance_date FROM attendance a";
-function makeAttendanceRepository({pool}){return {
+function makeAttendanceRepository(){return {
   async lockProgram(connection,id){const [rows]=await connection.execute('SELECT program_id,trainer_user_id FROM training_programs WHERE program_id=? FOR UPDATE',[id]);return rows[0]||null;},
   async lockBatch(connection,ids){const result=new Map();
     const ordered=[...ids].sort((a,b)=>BigInt(a)<BigInt(b)?-1:BigInt(a)>BigInt(b)?1:0);

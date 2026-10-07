@@ -16,11 +16,12 @@ function makeReportRepository({errors}){
     for(const row of rows){const participant=row.role_id==='PARTICIPANT',type=participant?'PARTICIPANT_ACCOUNT':'ADMINISTRATIVE_USER_ACCOUNT';
       const matches=events.filter(event=>event.entity_type===type&&String(event.entity_id)===String(participant?row.participant_id:row.user_id));
       if(matches.length!==1)throw errors.integrity();const event=matches[0];
-      let payload;try{payload=typeof event.new_value==='string'?JSON.parse(event.new_value):event.new_value;
-        if(!payload||!sameId(payload.userId,row.user_id)||event.actor_role!=='SYSTEM_ADMINISTRATOR')throw new Error();
-        if(participant&&(!sameId(payload.participantId,row.participant_id)||!sameId(event.actor_user_id,technicalActor)))throw new Error();
-        if(!participant&&(sameId(event.actor_user_id,technicalActor)||payload.role!==row.role_id||!event.account_identifier))throw new Error();
-      }catch{throw errors.integrity();}
+      let payload;
+      try { payload=typeof event.new_value==='string'?JSON.parse(event.new_value):event.new_value; }
+      catch { throw errors.integrity(); }
+      if(!payload||!sameId(payload.userId,row.user_id)||event.actor_role!=='SYSTEM_ADMINISTRATOR')throw errors.integrity();
+      if(participant&&(!sameId(payload.participantId,row.participant_id)||!sameId(event.actor_user_id,technicalActor)))throw errors.integrity();
+      if(!participant&&(sameId(event.actor_user_id,technicalActor)||payload.role!==row.role_id||!event.account_identifier))throw errors.integrity();
       row.created_by=participant?'SELF-REGISTRATION':event.account_identifier;
       if(!participant){row.participant_id=null;row.mobile_no=null;}
     }

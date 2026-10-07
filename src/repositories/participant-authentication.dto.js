@@ -1,7 +1,4 @@
-const { makeDto } = require('../utils/implementation-response');
-function makeFeatureDto(codec, approvedProgramProjection) {
-  const { project } = makeDto(codec);
-  const dto = {};
-  return dto;
+function makeFeatureDto() {
+  return {};
 }
 module.exports = { makeFeatureDto };
