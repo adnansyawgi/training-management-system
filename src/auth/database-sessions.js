@@ -69,7 +69,7 @@ function makeDatabaseSessions({ pool, config = readAuthenticationConfig, now = (
             const user = users[0];
             const [profiles] = await connection.execute('SELECT participant_id FROM participants WHERE user_id = ? LIMIT 2', [data.userId]);
             const participant = data.role === 'PARTICIPANT';
-            const supportedRole = participant || data.role === 'SYSTEM_ADMINISTRATOR';
+            const supportedRole = participant || ['SYSTEM_ADMINISTRATOR', 'TRAINING_ADMINISTRATOR', 'TRAINER'].includes(data.role);
             const validProfile = participant
               ? profiles.length === 1 && sameId(profiles[0].participant_id, data.participantId)
               : profiles.length === 0 && data.participantId === undefined;

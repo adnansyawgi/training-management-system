@@ -7,11 +7,11 @@
   <link href="<%= bootstrapCssUrl %>" rel="stylesheet" integrity="<%= bootstrapCssIntegrity %>" crossorigin="anonymous">
   <link href="<%= appCssUrl %>" rel="stylesheet">
 </head>
-<body class="bg-light" data-workflow="WF-004" data-success-url="<%= adminLandingUrl %>">
+<body class="bg-light" data-workflow="<%= workflow %>" <% if (workflow === "WF-006") { %>data-training-administrator-url="<%= trainingAdministratorLandingUrl %>" data-trainer-url="<%= trainerLandingUrl %>"<% } else { %>data-success-url="<%= adminLandingUrl %>"<% } %>>
 <main class="container py-4">
   <div class="row justify-content-center"><div class="col-12 col-md-6 col-lg-5">
     <div class="card shadow-sm"><div class="card-body p-4">
-      <h1 class="h4 mb-4">System Administrator Login</h1>
+      <h1 class="h4 mb-4"><%= workflow === "WF-006" ? "Staff Login" : "System Administrator Login" %></h1>
       <div id="pageMessage" class="alert d-none" role="alert" aria-live="polite"></div>
       <form id="loginForm" novalidate>
         <div class="mb-3">
@@ -29,6 +29,6 @@
     </div></div>
   </div></div>
 </main>
-<script src="<%= systemAdministratorLoginJsUrl %>" defer></script>
+<script src="<%= workflow === "WF-006" ? staffLoginJsUrl : systemAdministratorLoginJsUrl %>" defer></script>
 </body>
 </html>

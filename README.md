@@ -495,3 +495,53 @@ and rollback after injected account/audit failures.
 Verification on 7 October 2026: **35 suites and 330 tests passed**, including
 live isolated MySQL WF-002 through WF-005 suites. The application database was
 not modified. `git diff --check` passed.
+
+WF-006 Staff Authentication
+---------------------------
+
+Implemented from the WF-006 backend v1.2 and UI v1.4 documents. Open
+`http://localhost:3000/staff/login` for Training Administrator or Trainer login.
+System Administrator login remains at `/admin/login`.
+
+`POST /api/v1/auth/staff/login` accepts only `email` and `password`. Only ACTIVE
+TRAINING_ADMINISTRATOR and TRAINER accounts can authenticate. Success returns
+exactly `{ userId, role, status, expiresAt }` with HTTP 200 and a signed HttpOnly,
+SameSite=Lax cookie (Secure according to existing deployment configuration).
+The browser redirects by the canonical response role: Training Administrator to
+`/admin/programs`, Trainer to `/trainer/programs`. These destination pages are
+reserved for their separate workflows and currently return 404. WF-006 provides
+login and authentication, without implementing those pages.
+
+The shared authentication transaction commits successful-login state, session
+and audit together. Five credential failures within 15 minutes trigger a
+15-minute lockout. Unknown email, invalid credentials, INACTIVE and disallowed
+roles return generic 401; LOCKED, DISABLED and temporary lockout return 423.
+Validation returns 400 and infrastructure errors return sanitized 500 without
+issuing a cookie. Login accepts existing passwords without reapplying creation
+complexity rules. Staff sessions recheck live role/status and use the existing
+30-minute idle and 8-hour absolute timeouts and shared invalidation adapter.
+No new logout endpoint is introduced.
+
+Authentication audit events reuse `AUTHENTICATION_SUCCEEDED` and
+`AUTHENTICATION_FAILED`. Successful events use the staff user as actor and scope
+`ALL_TRAINING_OPERATIONS` for Training Administrator or `ASSIGNED_PROGRAMS` for
+Trainer. Rejected attempts use scope `STAFF` and the configured reserved technical
+actor. Credentials, hashes and session identifiers are excluded. These navigation
+and audit bindings were approved during implementation.
+
+No new migration or environment variable is required. Existing session, database
+and reserved audit actor configuration applies. Staff accounts are provisioned
+through WF-005. Restart the Node server after updating code; `npm start` does not
+reload route changes automatically.
+
+Run `npm.cmd test` from `src`. Isolated live verification uses
+`WF006_TEST_DB_HOST`, `WF006_TEST_DB_PORT`, `WF006_TEST_DB_USER`,
+`WF006_TEST_DB_PASSWORD` and a fresh `WF006_TEST_DB_NAME` matching
+`tms_wf006_<unique-name>_test`. Use a disposable MySQL instance; existing schemas
+are refused. Tests cover both staff roles, WF-005-created accounts, forbidden
+roles, credential failures, concurrent lockout, audit/session rollback, cookie
+rotation, expiry, invalidation, browser safety and route delivery.
+
+Verification on 7 October 2026: **39 suites and 390 tests passed**, including live
+isolated MySQL WF-002 through WF-006 suites. The disposable test container was
+removed; the application database was not modified. `git diff --check` passed.

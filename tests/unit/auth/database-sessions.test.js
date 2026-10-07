@@ -75,3 +75,37 @@ test.each(['valid', 'role-changed', 'disabled', 'technical-actor', 'unexpected-p
     expect(principal).not.toHaveProperty('participantId');
   } else expect(principal).toBeNull();
 });
+
+test.each(['valid', 'role-changed', 'disabled', 'technical-actor', 'unexpected-profile', 'identity-mismatch'])('TRAINING_ADMINISTRATOR session %s validates the live principal without participant identity', async reason => {
+  const prepared = await sessions.prepare({ connection, now: instant, preparedSessionIds: [] }, {}, { userId: '12', role: 'TRAINING_ADMINISTRATOR' });
+  const data = { userId: '12', role: 'TRAINING_ADMINISTRATOR', csrfToken: 'c'.repeat(64), absoluteExpiresAt: '2026-10-07T09:00:00Z' };
+  connection.execute.mockReset().mockResolvedValue([{}]);
+  connection.execute.mockResolvedValueOnce([[{ user_id: reason === 'identity-mismatch' ? '13' : '12', session_data: JSON.stringify(data), expires_at: new Date('2026-10-07T01:30:00Z') }]]);
+  if (reason !== 'identity-mismatch') {
+    connection.execute.mockResolvedValueOnce([[{ role_id: reason === 'role-changed' ? 'PARTICIPANT' : 'TRAINING_ADMINISTRATOR', role_name: 'TRAINING_ADMINISTRATOR',
+      account_status: reason === 'disabled' ? 'DISABLED' : 'ACTIVE', authentication_method: reason === 'technical-actor' ? 'SYSTEM' : 'PASSWORD' }]])
+      .mockResolvedValueOnce([reason === 'unexpected-profile' ? [{ participant_id: '34' }] : []]);
+  }
+  const principal = await sessions.load({ headers: { cookie: 'tms.sid=' + prepared.cookiePlan.value } });
+  if (reason === 'valid') {
+    expect(principal).toEqual({ userId: '12', role: 'TRAINING_ADMINISTRATOR', csrfToken: 'c'.repeat(64) });
+    expect(principal).not.toHaveProperty('participantId');
+  } else expect(principal).toBeNull();
+});
+
+test.each(['valid', 'role-changed', 'disabled', 'technical-actor', 'unexpected-profile', 'identity-mismatch'])('TRAINER session %s validates the live principal without participant identity', async reason => {
+  const prepared = await sessions.prepare({ connection, now: instant, preparedSessionIds: [] }, {}, { userId: '12', role: 'TRAINER' });
+  const data = { userId: '12', role: 'TRAINER', csrfToken: 'c'.repeat(64), absoluteExpiresAt: '2026-10-07T09:00:00Z' };
+  connection.execute.mockReset().mockResolvedValue([{}]);
+  connection.execute.mockResolvedValueOnce([[{ user_id: reason === 'identity-mismatch' ? '13' : '12', session_data: JSON.stringify(data), expires_at: new Date('2026-10-07T01:30:00Z') }]]);
+  if (reason !== 'identity-mismatch') {
+    connection.execute.mockResolvedValueOnce([[{ role_id: reason === 'role-changed' ? 'PARTICIPANT' : 'TRAINER', role_name: 'TRAINER',
+      account_status: reason === 'disabled' ? 'DISABLED' : 'ACTIVE', authentication_method: reason === 'technical-actor' ? 'SYSTEM' : 'PASSWORD' }]])
+      .mockResolvedValueOnce([reason === 'unexpected-profile' ? [{ participant_id: '34' }] : []]);
+  }
+  const principal = await sessions.load({ headers: { cookie: 'tms.sid=' + prepared.cookiePlan.value } });
+  if (reason === 'valid') {
+    expect(principal).toEqual({ userId: '12', role: 'TRAINER', csrfToken: 'c'.repeat(64) });
+    expect(principal).not.toHaveProperty('participantId');
+  } else expect(principal).toBeNull();
+});

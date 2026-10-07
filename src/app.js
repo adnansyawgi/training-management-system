@@ -19,6 +19,7 @@ app.use(publicUiRoutes);
 app.use('/api/v1/auth', participantAuthRoutes);
 app.use('/api/v1', assemble(bindings));
 app.use('/api/v1', require('./system-administrator-authentication.composition').assemble(bindings));
+app.use('/api/v1', require('./staff-authentication.composition').assemble(bindings));
 app.use('/api/v1', require('./system-administrator-bootstrap.composition').assemble(require('./system-administrator-bootstrap.bindings')));
 const administrativeUsers = require('./administrative-user-creation.bindings');
 app.use('/api/v1', require('./administrative-user-creation.composition').assemble(administrativeUsers));
