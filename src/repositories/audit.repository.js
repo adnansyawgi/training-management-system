@@ -41,7 +41,7 @@ async function resolveTechnicalActor(connection) {
   // The initial migration generates this identity. Deployment must bind the
   // provisioned actor explicitly; other disabled administrators are not actors.
   const actorIdentifier = process.env.SYSTEM_AUDIT_ACTOR_ACCOUNT_IDENTIFIER;
-  if (!actorIdentifier || !actorIdentifier.trim()) {
+  if (!actorIdentifier?.trim()) {
     const error = new Error('Reserved technical audit actor identity is not configured.');
     error.code = 'AUDIT_ACTOR_CONFIGURATION_ERROR';
     throw error;

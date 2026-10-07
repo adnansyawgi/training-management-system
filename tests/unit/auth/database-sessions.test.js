@@ -109,3 +109,23 @@ test.each(['valid', 'role-changed', 'disabled', 'technical-actor', 'unexpected-p
     expect(principal).not.toHaveProperty('participantId');
   } else expect(principal).toBeNull();
 });
+
+test.each(['invalid-expiry', 'expired', 'exact-deadline', 'invalid-clock'])('fails closed for session timing: %s', async reason => {
+  const prepared = await prepare();
+  if (reason === 'invalid-clock') {
+    sessions = makeDatabaseSessions({ pool, config: () => cfg, now: () => new Date(NaN) });
+  }
+  const expiry = {
+    'invalid-expiry': 'invalid timestamp',
+    expired: new Date(instant.getTime() - 1),
+    'exact-deadline': instant,
+    'invalid-clock': new Date(instant.getTime() + 60000)
+  }[reason];
+  connection.execute.mockReset().mockResolvedValue([{}]);
+  connection.execute.mockResolvedValueOnce([[{ user_id: '12', session_data: '{}', expires_at: expiry }]]);
+  await expect(sessions.load({ headers: { cookie: 'tms.sid=' + prepared.cookiePlan.value } })).resolves.toBeNull();
+  expect(connection.execute).toHaveBeenCalledTimes(2);
+  expect(connection.execute.mock.calls[1][0]).toBe('DELETE FROM sessions WHERE session_id = ?');
+  expect(connection.commit).toHaveBeenCalledTimes(1);
+  expect(connection.release).toHaveBeenCalledTimes(1);
+});

@@ -4,6 +4,7 @@
   const businessClock = window.businessTime;
   function errorText(status){return ({400:'Check the filter values and date range.',401:'Your session expired. Sign in again.',403:'You do not have access to registration management.',404:'The registration is no longer available.'})[status]||'Unable to load registrations. Try again.';}
   function exact(value,keys){return value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).length===keys.length&&keys.every(key=>Object.hasOwn(value,key));}
+  function validRecord(value,keys){return exact(value,keys)&&['registrationId','participantId','programId'].every(key=>Number.isSafeInteger(value[key])&&value[key]>0)&&['REGISTERED','CANCELLED'].includes(value.status);}
   document.addEventListener('DOMContentLoaded', () => {
     const form=document.getElementById('filterForm');if(!form){ return; }
     const rows=document.getElementById('registrationRows'),message=document.getElementById('pageMessage');
@@ -16,7 +17,6 @@
     function show(text){message.className='alert alert-danger';message.textContent=text;}
 
 
-    function validRecord(value,keys){return exact(value,keys)&&['registrationId','participantId','programId'].every(key=>Number.isSafeInteger(value[key])&&value[key]>0)&&['REGISTERED','CANCELLED'].includes(value.status);}
     function timestamp(value){return value===null?'':businessClock.localDateTime(value,document.body.dataset.timezone).replace('T',' ')+' ('+document.body.dataset.timezone+')';}
     function controls(pending){form.querySelector('button[type="submit"]').disabled=pending;document.getElementById('clearSearch').disabled=pending;previous.disabled=pending||currentPage<=1;next.disabled=pending||currentPage*pageSize>=total;}
     function hideDetail(){detail.classList.add('d-none');fields.replaceChildren();}

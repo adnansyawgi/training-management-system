@@ -53,7 +53,11 @@ function makeDatabaseSessions({
     return supplied.length === expected.length && timingSafeEqual(supplied, expected) ? match[1] : null;
   }
   async function loadPrincipal(connection, row, current, sessionId) {
-    if (!row || !(new Date(row.expires_at).getTime() > current.getTime())) {
+    if (!row) return null;
+    const expiresAtMs = new Date(row.expires_at).getTime();
+    const currentMs = current.getTime();
+    // Invalid timestamps must fail closed, just like expired sessions.
+    if (!Number.isFinite(expiresAtMs) || !Number.isFinite(currentMs) || expiresAtMs <= currentMs) {
       return null;
     }
     const data = JSON.parse(row.session_data);

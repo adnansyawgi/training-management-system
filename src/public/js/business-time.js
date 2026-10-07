@@ -13,7 +13,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (formatter) {
   'use strict';
   function scheduledStart(day, time, timezone) {
-    if (typeof timezone !== 'string' || !timezone) { throw new Error('Business timezone required.'); }
+    if (typeof timezone !== 'string' || !timezone) { throw new TypeError('Business timezone required.'); }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !/^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(time)) { throw new Error('Invalid schedule.'); }
     const desired = Date.parse(day + 'T' + time + 'Z');
     if (!Number.isFinite(desired) || new Date(desired).toISOString().slice(0, 19) !== day + 'T' + time) { throw new Error('Invalid schedule.'); }

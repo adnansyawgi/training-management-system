@@ -129,7 +129,9 @@ function makeReportExecutionRepository({
           }
           await connection.commit();
           return artifact;
-        } catch (error) {
+        } catch {
+          // Materialization errors are deliberately replaced with the trusted integrity
+          // error below so database or renderer details cannot reach the response.
           // Revert any successful completion/audits before recording failure.
           if (await recordMaterializationFailure(connection, event, id)) {
             inserted = false;

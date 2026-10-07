@@ -32,7 +32,7 @@ function makeDto(codec) {
   // Configure mysql2 supportBigNumbers/bigNumberStrings on the existing pool.
   function project(row, fields) {
     if (!row || typeof row !== 'object') {
-      throw new Error('Invalid repository row.');
+      throw new TypeError('Invalid repository row.');
     }
     const result = {};
     for (const [key, column, kind, nullable = false] of fields) {

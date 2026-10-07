@@ -11,7 +11,7 @@ function assembleAuthentication(bindings, policy) {
   if (typeof bindings?.requestContext !== 'function' ||
       typeof bindings.cookies?.emitCommitted !== 'function' ||
       typeof bindings.cookies?.discardUnsent !== 'function') {
-    throw new Error('Authentication context and committed cookie adapters are required.');
+    throw new TypeError('Authentication context and committed cookie adapters are required.');
   }
   const errors = makeErrors(bindings.errorCodes);
   const codec = makeResponseCodec(bindings.identityPolicy);

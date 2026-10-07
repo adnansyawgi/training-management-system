@@ -3,7 +3,7 @@ const v = require('../validators/implementation-validation');
 function numericId(value) {
   const number = Number(v.positiveId(value));
   if (!Number.isSafeInteger(number)) {
-    throw new Error('Approved lossless JSON ID binding required.');
+    throw new TypeError('Approved lossless JSON ID binding required.');
   }
   return number;
 }
@@ -25,7 +25,7 @@ function makeResponseCodec({
         return value.toISOString();
       }
       if (typeof value !== 'string') {
-        throw new Error('Invalid UTC timestamp.');
+        throw new TypeError('Invalid UTC timestamp.');
       }
       // SDD DATETIME timestamps represent UTC; do not apply business timezone twice.
       const input = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d{1,3})?$/.test(value) ? value.replace(' ', 'T') + 'Z' : value;
