@@ -2,11 +2,12 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="csrf-token" content="<%= csrfToken %>"><title>Registration Confirmation</title>
 <link href="<%= bootstrapCssUrl %>" rel="stylesheet" integrity="<%= bootstrapCssIntegrity %>" crossorigin="anonymous"><link href="<%= appCssUrl %>" rel="stylesheet"></head>
-<body class="bg-light" data-program-id="<%= program.programId %>" data-workflow="WF-009"><main class="container py-4">
+<body class="bg-light" data-program-id="<%= program.programId %>" data-workflow="WF-009">
+<%- include('../partials/header') %><main id="mainContent" tabindex="-1" class="container py-4">
 <h1 class="h4">Registration Confirmation</h1><div id="pageMessage" class="alert d-none" role="alert" aria-live="polite"></div>
 <div class="card mb-3"><div class="card-body"><h2 class="h6">Selected Program</h2><dl>
 <dt>Program</dt><dd><%= program.name %></dd><dt>Schedule</dt><dd><%= program.trainingDate %> <%= program.startTime %> - <%= program.endTime %></dd>
 <dt>Available Seats</dt><dd><%= program.availableSeats %></dd></dl><h2 class="h6">Participant</h2><dl>
 <dt>Name</dt><dd><%= participant.name %></dd><dt>NRIC / Passport</dt><dd><%= participant.maskedNricPassportNo %></dd><dt>Email</dt><dd><%= participant.email %></dd></dl></div></div>
 <div class="d-flex gap-2"><a href="<%= programDetailsUrl %>" class="btn btn-outline-secondary">Cancel</a><button id="confirmRegistration" type="button" class="btn btn-primary">Confirm Registration</button></div>
-</main><script src="<%= participantRegistrationJsUrl %>" defer></script></body></html>
+</main><script src="<%= participantRegistrationJsUrl %>" defer></script><%- include('../partials/footer') %></body></html>

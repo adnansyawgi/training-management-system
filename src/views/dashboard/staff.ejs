@@ -1,0 +1,6 @@
+<%- include('../partials/head', {title: 'Staff Dashboard'}) %>
+<main id="mainContent" class="container py-4" tabindex="-1"><h1>Staff Dashboard</h1><p>Choose an authorized function below.</p>
+<div class="row g-3"><% navigation.forEach(item => { %><div class="col-12 col-md-6 col-lg-4"><a class="card card-body h-100 text-decoration-none" href="<%= item.href %>"><%= item.label %></a></div><% }); %>
+<div class="col-12 col-md-6 col-lg-4"><a class="card card-body h-100 text-decoration-none" href="/profile">Profile</a></div></div>
+
+</main><%- include('../partials/footer') %></body></html>

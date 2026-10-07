@@ -10,7 +10,8 @@
     <link href="<%= appCssUrl %>" rel="stylesheet">
   </head>
   <body class="bg-light">
-    <main class="container">
+<%- include('../partials/header') %>
+    <main id="mainContent" tabindex="-1" class="container">
       <div class="row justify-content-center min-vh-100 align-items-center py-5">
         <div class="col-12 col-sm-10 col-md-8 col-lg-5">
           <div class="text-center mb-4">
@@ -75,5 +76,5 @@
 </main>
 <script src="<%= participantRegisterJsUrl %>" defer>
 </script>
-</body>
+<%- include('../partials/footer') %></body>
 </html>

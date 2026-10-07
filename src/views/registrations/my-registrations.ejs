@@ -2,7 +2,8 @@
 <meta name="csrf-token" content="<%= csrfToken %>"><title>My Registrations</title>
 <link href="<%= bootstrapCssUrl %>" rel="stylesheet" integrity="<%= bootstrapCssIntegrity %>" crossorigin="anonymous"><link href="<%= appCssUrl %>" rel="stylesheet"></head>
 <body class="bg-light" data-workflow="WF-010" data-business-timezone="<%= businessTimezone %>" data-program-details-base-url="<%= programDetailsBaseUrl %>">
-<main class="container py-4"><h1 class="h4">My Registrations</h1><div id="pageMessage" class="alert d-none" role="alert" aria-live="polite"></div>
+<%- include('../partials/header') %>
+<main id="mainContent" tabindex="-1" class="container py-4"><h1 class="h4">My Registrations</h1><div id="pageMessage" class="alert d-none" role="alert" aria-live="polite"></div>
 <form id="registrationFilter" class="row g-3 mb-3">
 <div class="col-md-4"><label for="statusFilter" class="form-label">Status</label><select id="statusFilter" class="form-select"><option value="">All</option><option value="REGISTERED">Registered</option><option value="CANCELLED">Cancelled</option></select></div>
 <div class="col-md-4"><label for="sortFilter" class="form-label">Sort</label><select id="sortFilter" class="form-select"><% sortOptions.forEach(option => { %><option value="<%= option.value %>"><%= option.label %></option><% }); %></select></div>
@@ -13,4 +14,4 @@
 <section id="cancelPanel" class="card card-body d-none" aria-labelledby="cancelHeading"><h2 id="cancelHeading" class="h6">Confirm Cancellation</h2><p id="selectedRegistration"></p>
 <label for="cancellationReason" class="form-label">Cancellation Reason (optional)</label><textarea id="cancellationReason" class="form-control" maxlength="500"></textarea>
 <div class="mt-2 d-flex gap-2"><button id="confirmCancellation" type="button" class="btn btn-danger">Confirm Cancellation</button><button id="closeCancellation" type="button" class="btn btn-outline-secondary">Back</button></div></section>
-</main><script src="<%= businessTimeJsUrl %>" defer></script><script src="<%= myRegistrationsJsUrl %>" defer></script></body></html>
+</main><script src="<%= businessTimeJsUrl %>" defer></script><script src="<%= myRegistrationsJsUrl %>" defer></script><%- include('../partials/footer') %></body></html>

@@ -19,7 +19,7 @@ const submit = async () => {
 const response = (status, body) => ({ status, json: async () => body });
 
 beforeEach(async () => {
-  dom = new JSDOM(ejs.render(template, ui), { url: 'http://localhost/register', runScripts: 'outside-only' });
+  dom = new JSDOM(ejs.render(template, ui, { filename: path.join(__dirname, "../../../src/views/auth/participant-register.ejs") }), { url: 'http://localhost/register', runScripts: 'outside-only' });
   document = dom.window.document;
   await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }));
   fetchMock = jest.fn();

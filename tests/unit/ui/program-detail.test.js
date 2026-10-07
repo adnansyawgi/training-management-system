@@ -17,7 +17,7 @@ async function start(reply) {
   await new Promise(done => setImmediate(done));
 }
 beforeEach(async () => {
-  dom = new JSDOM(ejs.render(template, { ...ui, programId: '1' }), { url: 'http://localhost/programs/1' });
+  dom = new JSDOM(ejs.render(template, { ...ui, programId: '1' }, { filename: path.join(__dirname, "../../../src/views/programs/program-detail.ejs") }), { url: 'http://localhost/programs/1' });
   document = dom.window.document;
   await new Promise(done => document.addEventListener('DOMContentLoaded', done, { once: true })); fetchMock = jest.fn();
 });

@@ -31,3 +31,11 @@ body {
   overflow-wrap: anywhere;
 }
 
+
+/* CR-001 shared shell: visible focus and wrapping at narrow viewports. */
+:focus-visible { outline: 3px solid #084298; outline-offset: 3px; }
+.skip-link { position: absolute; z-index: 1100; background: white; padding: .75rem; }
+.navbar-brand { max-width: calc(100% - 4rem); font-size: 1rem; }
+main, .card, .modal-content { overflow-wrap: anywhere; }
+.modal[hidden] { display: none; }
+@media (max-width: 575.98px) { .container { padding-left: 1rem; padding-right: 1rem; } }

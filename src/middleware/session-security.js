@@ -1,19 +1,36 @@
 const { timingSafeEqual } = require('node:crypto');
 function makeSessionSecurity({ sessions, errors, audit }) {
   return {
+    async optionalSession(req, res, next) {
+      try {
+        const principal = await sessions.load(req);
+        if (principal) {
+          req.principal = principal;
+          res.locals.principal = principal;
+          res.locals.csrfToken = principal.csrfToken;
+          res.setHeader('Cache-Control', 'no-store');
+        }
+        next();
+      } catch (error) { next(error); }
+    },
     async requireSession(req, res, next) {
       try {
         const principal = await sessions.load(req);
-        if (!principal) return next(errors.authentication());
+        if (!principal) {
+          if (req.path === '/api/v1/auth/logout') sessions.clearCookie(res);
+          return next(errors.authentication());
+        }
         req.principal = principal;
         req.authenticatedSessionId = sessions.readId(req);
         res.locals.csrfToken = principal.csrfToken;
+        res.locals.principal = principal;
         res.setHeader('Cache-Control', 'no-store');
         return next();
       } catch (error) { return next(error); }
     },
     requireRole(role) {
-      return (req, res, next) => req.principal?.role === role ? next() : next(errors.forbidden());
+      const allowed = Array.isArray(role) ? role : [role];
+      return (req, res, next) => allowed.includes(req.principal?.role) ? next() : next(errors.forbidden());
     },
     async requireCsrf(req, res, next) {
       try {

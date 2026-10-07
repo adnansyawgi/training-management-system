@@ -14,7 +14,7 @@ async function start(reply=response()){
 }
 async function filter(){field('registrationFilter').dispatchEvent(new dom.window.Event('submit',{cancelable:true}));await settle();}
 beforeEach(async()=>{
-  dom=new JSDOM(ejs.render(template,{...ui,csrfToken:'a'.repeat(64),businessTimezone:'Asia/Kuala_Lumpur',sortOptions:configuration.sortOptions}),{url:'http://localhost/registrations'});
+  dom=new JSDOM(ejs.render(template,{...ui,csrfToken:'a'.repeat(64),businessTimezone:'Asia/Kuala_Lumpur',sortOptions:configuration.sortOptions}, { filename: path.join(__dirname, "../../../src/views/registrations/my-registrations.ejs") }),{url:'http://localhost/registrations'});
   document=dom.window.document;await new Promise(done=>document.addEventListener('DOMContentLoaded',done,{once:true}));fetchMock=jest.fn();
 });
 afterEach(()=>dom.window.close());

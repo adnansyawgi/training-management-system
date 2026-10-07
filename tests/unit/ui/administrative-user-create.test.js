@@ -9,7 +9,7 @@ let dom, document, fetchMock;
 const field = id => document.getElementById(id);
 const submit = async () => { field('administrativeUserForm').dispatchEvent(new dom.window.Event('submit', { cancelable: true })); await new Promise(resolve => setImmediate(resolve)); };
 beforeEach(async () => {
-  dom = new JSDOM(ejs.render(template, { ...ui, csrfToken: 'c'.repeat(64) }), { url: 'http://localhost/admin/users' }); document = dom.window.document;
+  dom = new JSDOM(ejs.render(template, { ...ui, csrfToken: 'c'.repeat(64) }, { filename: path.join(__dirname, "../../../src/views/admin/user-account-management.ejs") }), { url: 'http://localhost/admin/users' }); document = dom.window.document;
   await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true })); fetchMock = jest.fn();
   vm.runInNewContext(script, { document, fetch: fetchMock }); document.dispatchEvent(new dom.window.Event('DOMContentLoaded'));
   for (const [key, value] of Object.entries(values)) field(key).value = value;

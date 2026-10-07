@@ -25,3 +25,17 @@ async function createUser(connection, user) {
 }
 
 module.exports = { findByEmail, createUser };
+
+async function findUserById(connection, id, lock = false) {
+  const [rows] = await connection.execute(`SELECT user_id, account_identifier, username, name, email,
+    role_id, role_name, account_status, authentication_method FROM users WHERE user_id = ?${lock ? ' FOR UPDATE' : ''}`, [id]);
+  return rows[0] || null;
+}
+async function updateUserProfileFields(connection, id, fields, now) {
+  if (!Object.hasOwn(fields, 'email')) return;
+  try {
+    await connection.execute('UPDATE users SET email = ?, updated_at = ? WHERE user_id = ?', [fields.email, now, id]);
+  } catch (error) { throw normalizeWf001PersistenceError(error); }
+}
+module.exports.findUserById = findUserById;
+module.exports.updateUserProfileFields = updateUserProfileFields;

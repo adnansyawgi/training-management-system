@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= title %> | Training Management System</title>
+<% if (typeof csrfToken !== 'undefined') { %><meta name="csrf-token" content="<%= csrfToken %>"><% } %>
+<link rel="stylesheet" href="<%= ui.bootstrapCssUrl %>" integrity="<%= ui.bootstrapCssIntegrity %>" crossorigin="anonymous">
+<link rel="stylesheet" href="<%= ui.appCssUrl %>">
+</head><body class="bg-light">
+<%- include('header') %>

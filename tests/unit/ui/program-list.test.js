@@ -20,7 +20,7 @@ async function filter() {
   field('filterForm').dispatchEvent(new dom.window.Event('submit', { cancelable: true })); await settle();
 }
 beforeEach(async () => {
-  dom = new JSDOM(ejs.render(template, { ...ui, categories: [{ categoryId: 2, name: '<b>Category</b>' }], availabilityOptions: configuration.availabilityOptions }), { url: 'http://localhost/programs' });
+  dom = new JSDOM(ejs.render(template, { ...ui, categories: [{ categoryId: 2, name: '<b>Category</b>' }], availabilityOptions: configuration.availabilityOptions }, { filename: path.join(__dirname, "../../../src/views/programs/program-list.ejs") }), { url: 'http://localhost/programs' });
   document = dom.window.document;
   await new Promise(done => document.addEventListener('DOMContentLoaded', done, { once: true }));
   fetchMock = jest.fn();

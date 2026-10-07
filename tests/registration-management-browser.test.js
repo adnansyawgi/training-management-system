@@ -8,7 +8,7 @@ const listing = (items=[record],page=1,total=1) => ({items,page,pageSize:20,tota
 const response = data => ({ok:true,json:async()=>data});
 const tick = () => new Promise(resolve=>setImmediate(resolve));
 async function page(fetch) {
-  const html=ejs.render(fs.readFileSync(path.join(__dirname,'../src/views/admin/registration-management.ejs'),'utf8'),{...ui,...bindings,businessTimezone:'Asia/Kuala_Lumpur',workflowJsUrl:ui.registrationManagementJsUrl});
+  const html=ejs.render(fs.readFileSync(path.join(__dirname,'../src/views/admin/registration-management.ejs'),'utf8'),{...ui,...bindings,businessTimezone:'Asia/Kuala_Lumpur',workflowJsUrl:ui.registrationManagementJsUrl}, { filename: path.join(__dirname, "../src/views/admin/registration-management.ejs") });
   const dom=new JSDOM(html,{url:'http://localhost/admin/registrations',runScripts:'outside-only'});
   await new Promise(resolve=>dom.window.document.addEventListener('DOMContentLoaded',resolve,{once:true}));
   dom.window.businessTime=require('../src/public/js/business-time');dom.window.fetch=fetch;

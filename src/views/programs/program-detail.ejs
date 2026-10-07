@@ -7,7 +7,8 @@
   <link href="<%= appCssUrl %>" rel="stylesheet">
 </head>
 <body class="bg-light" data-workflow="WF-008" data-program-id="<%= programId %>" data-registration-url-template="<%= programRegistrationUrlTemplate %>">
-<main class="container py-4">
+<%- include('../partials/header') %>
+<main id="mainContent" tabindex="-1" class="container py-4">
   <div id="pageMessage" class="alert d-none" role="alert" aria-live="polite"></div>
   <article class="card shadow-sm" aria-busy="true" id="programArticle"><div class="card-body">
     <h1 id="programName" class="h4">Program Details</h1>
@@ -17,5 +18,5 @@
   </div></article>
 </main>
 <script src="<%= programDetailJsUrl %>" defer></script>
-</body>
+<%- include('../partials/footer') %></body>
 </html>

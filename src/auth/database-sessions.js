@@ -88,6 +88,7 @@ function makeDatabaseSessions({
   return {
     readId,
     invalidate,
+    clearCookie(res) { res.clearCookie(config().cookieName, options()); },
     async prepare(unit, context, principal) {
       const cfg = config();
       const sessionId = secureBytes(32).toString('hex');

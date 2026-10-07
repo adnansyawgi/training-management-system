@@ -200,3 +200,20 @@ module.exports.createReportAudit = async (connection, event) => {
     pageSize: event.input.pageSize
   }), event.context.ipAddress || null, event.context.userAgent?.slice(0, 500) || null, event.context.correlationId || null]);
 };
+
+module.exports.createProfileUpdatedAudit = async (connection, event) => {
+  const contact = record => {
+    const result = { email: record.user.email };
+    if (record.participant) result.mobileNo = record.participant.mobile_no;
+    return result;
+  };
+  await connection.execute(`INSERT INTO audit_records (event_timestamp, actor_user_id, actor_role, action,
+    entity_type, entity_id, result, change_summary, previous_value, new_value, access_scope,
+    data_classification, ip_address, user_agent, correlation_id)
+    VALUES (?, ?, ?, 'ACCOUNT_UPDATED', ?, ?, 'SUCCESS', 'Own profile contact details updated.', ?, ?,
+    ?, 'PERSONAL_DATA', ?, ?, ?)`, [event.now, event.principal.userId, event.principal.role,
+    event.principal.role === 'PARTICIPANT' ? 'PARTICIPANT_ACCOUNT' : 'ADMINISTRATIVE_USER_ACCOUNT',
+    event.principal.userId, JSON.stringify(contact(event.before)), JSON.stringify(contact(event.after)),
+    event.principal.role === 'PARTICIPANT' ? 'PARTICIPANT' : 'OWN_ACCOUNT', event.context.ipAddress || null,
+    event.context.userAgent?.slice(0, 500) || null, event.context.correlationId || null]);
+};

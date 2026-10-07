@@ -1,0 +1,16 @@
+<% const shellUi = typeof ui !== 'undefined' ? ui : { participantRegistrationUrl: '/register' }; %>
+<a class="visually-hidden-focusable skip-link" href="#mainContent">Skip to content</a>
+<header class="border-bottom bg-white"><nav class="navbar navbar-expand-lg container" aria-label="Main navigation">
+<a class="navbar-brand text-wrap" href="<%= typeof principal !== 'undefined' && principal ? navigationPolicy.resolveDestination(principal.role) : '/' %>">Training Management System</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#applicationNavigation" aria-controls="applicationNavigation" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+<div class="collapse navbar-collapse" id="applicationNavigation"><ul class="navbar-nav ms-auto flex-wrap">
+<% if (typeof principal !== 'undefined' && principal) { %>
+<% navigationPolicy.getMenu(principal).forEach(item => { %><li class="nav-item"><a class="nav-link" href="<%= item.href %>"><%= item.label %></a></li><% }); %>
+<li class="nav-item"><a class="nav-link" href="/profile">Profile</a></li>
+<li class="nav-item"><button type="button" class="btn btn-outline-secondary ms-lg-2" data-logout>Logout</button></li>
+<% } else { %>
+<li class="nav-item"><a class="nav-link" href="/">Home</a></li><li class="nav-item"><a class="nav-link" href="/login">Login</a></li>
+<li class="nav-item"><a class="nav-link" href="<%= shellUi.participantRegistrationUrl %>">Create Participant Account</a></li>
+<% } %>
+</ul></div></nav></header>
+<% if (typeof principal !== 'undefined' && principal) { %><div id="sessionMessage" class="container alert alert-danger d-none" role="alert" tabindex="-1"></div><% } %>

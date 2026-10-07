@@ -1,0 +1,5 @@
+<% if (typeof principal !== 'undefined' && principal || typeof sessionExpired !== 'undefined' && sessionExpired) { %>
+<%- include('session-expired-modal') %><script src="/js/session.js" defer></script>
+<% } %>
+<script src="<%= typeof ui !== 'undefined' ? ui.bootstrapJsUrl : bootstrapJsUrl %>" integrity="<%= typeof ui !== 'undefined' ? ui.bootstrapJsIntegrity : bootstrapJsIntegrity %>" crossorigin="anonymous" defer></script>
+<script src="/js/navigation.js" defer></script>

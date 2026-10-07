@@ -15,9 +15,20 @@ const mount = app.use.bind(app);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(correlationIdMiddleware);
+app.use((req, res, next) => {
+  res.locals.ui = require('./config/ui');
+  res.locals.navigationPolicy = require('./services/navigation.service');
+  next();
+});
 app.use(wrapJsonParser(express.json({ type: 'application/json', limit: '100kb' }), errors));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(require('./routes/home.routes'));
+app.use(require('./routes/login.routes'));
 app.use(publicUiRoutes);
+const applicationUi = require('./bindings/application-ui.bindings');
+app.use(require('./routes/dashboard.routes').makeRouter(applicationUi));
+app.use(require('./routes/profile.routes').makeRouter(applicationUi));
+app.use(require('./routes/logout.routes').makeRouter(applicationUi));
 app.use('/api/v1/auth', participantAuthRoutes);
 mount('/api/v1', assemble(bindings));
 mount('/api/v1', require('./composition/system-administrator-authentication.composition').assemble(bindings));
@@ -26,6 +37,7 @@ mount('/api/v1', require('./composition/system-administrator-bootstrap.compositi
 const administrativeUsers = require('./bindings/administrative-user-creation.bindings');
 mount('/api/v1', require('./composition/administrative-user-creation.composition').assemble(administrativeUsers));
 app.use(require('./routes/administrative-user-creation.routes').makePageRouter(administrativeUsers));
+app.use('/programs', applicationUi.security.optionalSession);
 const catalogue = require('./bindings/program-catalogue.bindings');
 mount('/api/v1', require('./composition/program-catalogue.composition').assemble(catalogue));
 app.use(require('./routes/program-catalogue-ui.routes').makePageRouter(catalogue));
@@ -52,5 +64,12 @@ app.use(require('./routes/certificate-management-ui.routes').makePageRouter(cert
 const reports=require('./bindings/report-generation.bindings');
 mount('/api/v1',require('./composition/report-generation.composition').assemble(reports));
 app.use(require('./routes/report-generation-ui.routes').makePageRouter(reports));
+app.use((error, req, res, next) => {
+  if (error.status === 401 && req.method === 'GET' && !req.path.startsWith('/api/') && req.get('Accept')?.includes('text/html')) {
+    res.status(401).set('Cache-Control', 'no-store').render('session-expired', { ...require('./config/ui'), sessionExpired: true });
+    return;
+  }
+  next(error);
+});
 app.use(errorHandler);
 module.exports = app;

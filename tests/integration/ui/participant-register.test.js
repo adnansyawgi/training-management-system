@@ -8,7 +8,7 @@ test('UI-T10: public registration renders approved route and asset/navigation bi
   expect(result.text).toContain(`href="${ui.bootstrapCssUrl}"`);
   expect(result.text).toContain(`integrity="${ui.bootstrapCssIntegrity}"`);
   expect(result.text).toContain('crossorigin="anonymous"');
-  expect(result.text.match(/href="\/login"/g)).toHaveLength(2);
+  expect(result.text.match(/href="\/login"/g)).toHaveLength(3);
   expect(result.headers['set-cookie']).toBeUndefined();
   for (const asset of [ui.appCssUrl, ui.participantRegisterJsUrl]) {
     await request(app).get(asset).expect(200);

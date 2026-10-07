@@ -18,3 +18,15 @@ async function createParticipant(connection, participant) {
 }
 
 module.exports = { findByNricPassportNo, createParticipant };
+
+async function findParticipantByUserId(connection, id, lock = false) {
+  const [rows] = await connection.execute(`SELECT participant_id, user_id, nric_passport_no, name, mobile_no
+    FROM participants WHERE user_id = ?${lock ? ' FOR UPDATE' : ''}`, [id]);
+  return rows;
+}
+async function updateParticipantProfileFields(connection, id, fields, now) {
+  if (!Object.hasOwn(fields, 'mobileNo')) return;
+  await connection.execute('UPDATE participants SET mobile_no = ?, updated_at = ? WHERE user_id = ?', [fields.mobileNo, now, id]);
+}
+module.exports.findParticipantByUserId = findParticipantByUserId;
+module.exports.updateParticipantProfileFields = updateParticipantProfileFields;
