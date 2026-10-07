@@ -164,8 +164,8 @@ Successful login returns only `{ userId, participantId, role, status, expiresAt 
 and sets a signed HttpOnly, SameSite=Lax session cookie. The session identifier
 is never returned in JSON. Login requires an ACTIVE account, consistent canonical
 PARTICIPANT role and exactly one linked participant profile. The browser redirects
-to `/programs` only after HTTP 200. `/programs` is the approved future WF-007
-target; that page remains unimplemented and currently returns 404.
+to `/programs` only after HTTP 200. WF-007 now implements this public catalogue
+page; apply its v1.2 migration before opening the page.
 
 ### Database and configuration setup
 
@@ -263,7 +263,7 @@ these audit rows.
 
 The shared transaction, timestamp history, reserved anonymous audit actor,
 INACTIVE-to-401 mapping and `/programs` navigation binding were explicitly
-approved during WF-002 implementation. No WF-007 page or API is included.
+approved during WF-002 implementation. WF-007 later adds the public catalogue page and API.
 
 ### WF-002 verification
 
@@ -545,3 +545,77 @@ rotation, expiry, invalidation, browser safety and route delivery.
 Verification on 7 October 2026: **39 suites and 390 tests passed**, including live
 isolated MySQL WF-002 through WF-006 suites. The disposable test container was
 removed; the application database was not modified. `git diff --check` passed.
+
+WF-007 Browse Available Training Programs
+-----------------------------------------
+
+Implemented from the WF-007 backend v1.2 and UI v1.4 documents. The public
+catalogue is available at `/programs`, including the destination after Participant
+login. `GET /api/v1/programs` requires no session and performs no mutation.
+
+### WF-007 database setup
+
+Apply `db/migrations/v1.2_program-catalogue-schema.sql` once after v1.0 and v1.1
+in the intended deployment database. It adds the SDD v1.16 `program_categories`,
+`training_programs` and `registrations` tables with their foreign keys, unique
+constraints, checks and indexes. The registrations table supports the derived
+seat count; this feature does not add registration or program-management APIs.
+The migration provisions no sample records. Existing database configuration is
+reused; no new environment settings are required. Restart the server after code
+updates. Missing tables return a sanitized 500 until the migration is applied.
+
+### WF-007 catalogue rules and API
+
+The approved public predicate includes OPEN and CLOSED programs belonging to
+ACTIVE categories. Full programs remain visible. `availableSeats` is capacity
+minus the number of REGISTERED registrations; CANCELLED history is excluded.
+No separate seat-count column is maintained. Categories for the filter are loaded
+from ACTIVE category records when the page renders.
+
+The API accepts exactly these query parameters:
+
+- `page`: positive integer, default 1.
+- `pageSize`: integer 1 through 100, default 20.
+- `categoryId`: positive safe JSON-compatible ID.
+- `availability`: `AVAILABLE` (remaining seats greater than zero) or `FULL`
+  (remaining seats zero or less). Omit it to include both.
+- `sort`: `DATE_ASC` (default), `DATE_DESC`, `NAME_ASC` or `NAME_DESC`; ties always
+  use ascending `program_id`.
+
+Count and rows use the same read-only REPEATABLE READ snapshot. Filter values,
+limits and offsets are parameterized, and sort expressions come from a static
+allow-list. Invalid, duplicate or unknown filters return 400. No matches and
+pages beyond the last match return 200 with empty items and the matching total.
+Database or invalid response-data failures use the common sanitized 500 contract.
+
+Success is exactly `{ items, page, pageSize, total }`. Each item contains only
+`programId`, `code`, `name`, `categoryId`, `categoryName`, `trainingDate`,
+`startTime`, `endTime`, `venue`, `deliveryMode`, `capacity`, `availableSeats`,
+`status`, `registrationOpenAt` and `registrationCloseAt`. Date-only values are
+`YYYY-MM-DD`, times are `HH:mm:ss`, and registration timestamps are ISO UTC.
+Unsafe response IDs fail closed rather than being rounded. Trainer identity and
+private program fields are excluded.
+
+The browser uses bounded pages of 20, resets to page 1 when filters change,
+prevents overlapping requests and displays fixed safe error/empty messages.
+Program text uses DOM textContent and category names use escaped EJS.
+View Details links target `/programs/:programId` for future WF-008; detail pages
+are outside WF-007 and remain unimplemented. The catalogue rules, schema and
+UI bindings were approved during implementation. No catalogue audit event or
+notification is introduced by this read-only workflow.
+
+### WF-007 verification
+
+Run `npm.cmd test` from `src`. Live verification uses `WF007_TEST_DB_HOST`,
+`WF007_TEST_DB_PORT`, `WF007_TEST_DB_USER`, `WF007_TEST_DB_PASSWORD` and a fresh
+`WF007_TEST_DB_NAME` matching `tms_wf007_<unique-name>_test`. Use a disposable
+MySQL instance; the suite refuses existing schemas and applies v1.0 through v1.2
+only in the new test database. It tests migration constraints, visibility,
+REGISTERED/CANCELLED seat calculations, filters, sorting, pagination, public
+page rendering and count/data consistency during a concurrent committed change.
+
+Verification on 7 October 2026: **44 suites and 445 tests passed**, including
+live isolated MySQL WF-002 through WF-007 suites. The application database was
+inspected read-only and was not modified. The disposable test container was
+removed. `git diff --check` passed. This is implementation evidence, not formal
+production/release approval.

@@ -7,5 +7,4 @@ test('login page binds approved navigation/assets without creating a session', a
   expect(result.text).toContain('/js/participant-login.js');
   expect(result.headers['set-cookie']).toBeUndefined();
   await request(app).get('/js/participant-login.js').expect(200);
-  await request(app).get('/programs').expect(404);
 });

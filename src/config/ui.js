@@ -18,5 +18,7 @@ module.exports = Object.freeze({
   staffLoginUrl: '/staff/login',
   staffLoginJsUrl: '/js/staff-login.js',
   trainingAdministratorLandingUrl: '/admin/programs',
-  trainerLandingUrl: '/trainer/programs'
+  trainerLandingUrl: '/trainer/programs',
+  programListJsUrl: '/js/program-list.js',
+  programDetailsBaseUrl: '/programs'
 });

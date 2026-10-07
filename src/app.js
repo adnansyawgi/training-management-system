@@ -24,5 +24,8 @@ app.use('/api/v1', require('./system-administrator-bootstrap.composition').assem
 const administrativeUsers = require('./administrative-user-creation.bindings');
 app.use('/api/v1', require('./administrative-user-creation.composition').assemble(administrativeUsers));
 app.use(require('./routes/administrative-user-creation.routes').makePageRouter(administrativeUsers));
+const catalogue = require('./program-catalogue.bindings');
+app.use('/api/v1', require('./program-catalogue.composition').assemble(catalogue));
+app.use(require('./routes/program-catalogue-ui.routes').makePageRouter(catalogue));
 app.use(errorHandler);
 module.exports = app;

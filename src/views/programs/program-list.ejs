@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Training Programs | Training Management System</title>
+  <link href="<%= bootstrapCssUrl %>" rel="stylesheet" integrity="<%= bootstrapCssIntegrity %>" crossorigin="anonymous">
+  <link href="<%= appCssUrl %>" rel="stylesheet">
+</head>
+<body class="bg-light" data-workflow="WF-007" data-program-details-base-url="<%= programDetailsBaseUrl %>">
+<main class="container py-4">
+  <h1 class="h4">Training Programs</h1>
+  <div id="pageMessage" class="alert d-none" role="alert" aria-live="polite"></div>
+  <form id="filterForm" class="row g-3 mb-3">
+    <div class="col-md-5"><label for="categoryId" class="form-label">Category</label>
+      <select id="categoryId" name="categoryId" class="form-select"><option value="">All Categories</option>
+        <% categories.forEach(category => { %><option value="<%= category.categoryId %>"><%= category.name %></option><% }); %>
+      </select>
+    </div>
+    <div class="col-md-4"><label for="availability" class="form-label">Availability</label>
+      <select id="availability" name="availability" class="form-select"><option value="">All</option>
+        <% availabilityOptions.forEach(option => { %><option value="<%= option.value %>"><%= option.label %></option><% }); %>
+      </select>
+    </div>
+    <div class="col-md-3 d-flex align-items-end"><button id="filterButton" class="btn btn-primary w-100" type="submit">Filter</button></div>
+  </form>
+  <div class="table-responsive"><table class="table table-striped">
+    <caption>Available training programs</caption>
+    <thead><tr><th scope="col">Code</th><th scope="col">Program Name</th><th scope="col">Category</th><th scope="col">Date</th><th scope="col">Seats</th><th scope="col">Details</th></tr></thead>
+    <tbody id="programRows"></tbody>
+  </table></div>
+  <div id="emptyState" class="alert alert-info d-none" role="status">No programs available.</div>
+  <nav class="d-flex justify-content-between" aria-label="Program pages">
+    <button id="previousPage" class="btn btn-outline-secondary" type="button" disabled>Previous</button>
+    <span id="pageInfo" role="status" aria-live="polite"></span>
+    <button id="nextPage" class="btn btn-outline-secondary" type="button" disabled>Next</button>
+  </nav>
+</main>
+<script src="<%= programListJsUrl %>" defer></script>
+</body>
+</html>
