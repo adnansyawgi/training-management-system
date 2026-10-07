@@ -4,7 +4,7 @@ const {
 } = require('../validators/implementation-validation');
 function responseValue(value, kind, codec) {
   if (value === undefined) {
-    throw new Error('Required response column is absent.');
+    throw new TypeError('Required response column is absent.');
   }
   switch (kind) {
     case 'id':
@@ -19,7 +19,7 @@ function responseValue(value, kind, codec) {
       {
         const number = Number(value);
         if (!Number.isFinite(number)) {
-          throw new Error('Invalid numeric response.');
+          throw new TypeError('Invalid numeric response.');
         }
         return number;
       }
@@ -39,7 +39,7 @@ function makeDto(codec) {
       const value = row[column];
       if (value === null) {
         if (!nullable) {
-          throw new Error('Required response value is null.');
+          throw new TypeError('Required response value is null.');
         }
         result[key] = null;
       } else {

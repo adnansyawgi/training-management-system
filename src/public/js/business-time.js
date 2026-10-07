@@ -14,9 +14,9 @@
   'use strict';
   function scheduledStart(day, time, timezone) {
     if (typeof timezone !== 'string' || !timezone) { throw new TypeError('Business timezone required.'); }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !/^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(time)) { throw new Error('Invalid schedule.'); }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !/^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(time)) { throw new TypeError('Invalid schedule.'); }
     const desired = Date.parse(day + 'T' + time + 'Z');
-    if (!Number.isFinite(desired) || new Date(desired).toISOString().slice(0, 19) !== day + 'T' + time) { throw new Error('Invalid schedule.'); }
+    if (!Number.isFinite(desired) || new Date(desired).toISOString().slice(0, 19) !== day + 'T' + time) { throw new TypeError('Invalid schedule.'); }
     const dateFormatter = formatter(timezone);
     const local = value => {
       const parts = Object.fromEntries(dateFormatter.formatToParts(new Date(value)).filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
@@ -24,7 +24,7 @@
     };
     let instant = desired;
     for (let index = 0; index < 4; index++) { instant += desired - local(instant); }
-    if (local(instant) !== desired) { throw new Error('Schedule is not a valid local time.'); }
+    if (local(instant) !== desired) { throw new TypeError('Schedule is not a valid local time.'); }
     // Choose the earlier occurrence of an ambiguous local time, conservatively.
     const matches = [instant];
     for (const minutes of [-120, -90, -60, -30, 30, 60, 90, 120]) {
@@ -38,7 +38,7 @@
   }
   function localDateTime(value, timezone) {
     const date = new Date(value);
-    if (!Number.isFinite(date.getTime())) { throw new Error('Invalid timestamp.'); }
+    if (!Number.isFinite(date.getTime())) { throw new TypeError('Invalid timestamp.'); }
     const parts = Object.fromEntries(formatter(timezone)
       .formatToParts(date).filter(part=>part.type!=='literal').map(part=>[part.type,part.value]));
     return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`;
