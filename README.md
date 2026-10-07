@@ -1011,3 +1011,78 @@ rosters, browser request authority and safe success/error handling. The final
 pending-form adjustment also passed all eight attendance browser tests. The
 disposable test container was removed; no application database migration was
 applied by this implementation run.
+
+
+WF-014 Certificate Eligibility & Issuance
+------------------------------------------
+
+Implemented from WF-014 backend v1.2, UI v1.4 and SDD v1.16 with the approved
+eligibility, reference, audit and page bindings. **Apply
+`db/migrations/v1.5_certificate-issuance-schema.sql` once after v1.0 through
+v1.4**, then restart. No additional environment setting is required.
+
+Sign in as a **Training Administrator** at `/staff/login`, then open
+`/admin/certificates` or follow Certificates from the management navigation.
+Program and eligible-registration selectors read directly from the database in
+bounded pages of 100; no new read APIs are introduced. The selected program's
+eligible registrations exclude already-issued records. Completion date displays
+read-only from the selected attendance record. Changing program opens its own
+eligibility page; Cancel returns to `/admin/programs`.
+
+`POST /api/v1/admin/certificates` accepts exactly registrationId (positive safe
+numeric ID), certificateType (100 characters) and certificateTitle (255), plus
+optional issuingAuthority (255), verificationReference (255) and documentReference
+(500). Unknown or server-derived fields are rejected. For example:
+
+```json
+{
+  "registrationId": 1,
+  "certificateType": "COMPLETION",
+  "certificateTitle": "Training completion"
+}
+```
+
+Eligibility requires a REGISTERED registration with matching PRESENT attendance
+at exactly 100%. Completion date derives from attendanceDate; eligibilityStatus
+is ELIGIBLE and eligibilityResult is `100% attendance achieved`. Issue date is
+computed in BUSINESS_TIMEZONE (default Asia/Kuala_Lumpur). Participant/program
+relationships, percentage, issuedBy, status and reference are server-controlled.
+No extra program lifecycle, type enum or date-window restriction is added.
+
+HTTP 201 returns exactly the 17 SDD fields: certificateId, certificateNumber,
+participantId, registrationId, programId, certificateType, certificateTitle,
+eligibilityStatus, eligibilityResult, attendancePercentage, completionDate,
+issueDate, certificateStatus, documentReference, verificationReference,
+issuingAuthority and issuedBy. Certificate status is ISSUED. The opaque technical
+reference is `C-<ULID>`; generated-reference collisions retry up to three attempts.
+Registration uniqueness returns 409; exhausted reference collisions fail closed
+with sanitized 500.
+
+Shared session/RBAC/CSRF infrastructure protects issuance, with live administrator
+and session checks inside the transaction. The existing program mutation
+coordinator serializes issuance with attendance/program updates. Source locks
+follow participant -> program -> registration -> attendance order, coordinating
+with registration and cancellation (including the certificate participant FK).
+Issuance and its mandatory CERTIFICATE_ISSUED audit with ALL_TRAINING_OPERATIONS
+scope commit together; audit or DTO failure rolls back the certificate.
+
+Missing registration/attendance, cancelled registrations and ineligible attendance
+return 400 rather than adding a new 404 contract. Anonymous requests return 401;
+other roles return 403. Certificates retain their immutable issuance snapshot if
+attendance is later changed or a permitted registration cancellation occurs; no
+automatic revocation or certificate update is introduced.
+
+This release records issuance only. References in the optional document and
+verification fields are stored metadata; no file is generated or fetched. PDF
+creation, templates, signatory details, business-facing numbering, revocation and
+notifications remain deferred. Revocation columns exist solely as the SDD schema
+requires them.
+
+Verification on 7 October 2026: **68 suites and 765 tests passed**, including
+live isolated MySQL WF-002 through WF-014 suites. WF-014 verifies exact DTOs,
+server authority, eligibility, business-date derivation, real reference collisions
+and exhaustion, duplicate issuance, mandatory audit rollback, source integrity,
+live account/session checks, role/CSRF controls, program-scoped escaped selectors,
+browser error handling and races against attendance changes and cancellation.
+The disposable MySQL container was removed. No application database migration
+was applied during implementation.

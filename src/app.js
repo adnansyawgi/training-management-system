@@ -44,5 +44,8 @@ app.use(require('./routes/registration-management-ui.routes').makePageRouter(reg
 const attendance=require('./attendance-management.bindings');
 app.use('/api/v1',require('./attendance-management.composition').assemble(attendance));
 app.use(require('./routes/attendance-management-ui.routes').makePageRouter(attendance));
+const certificates=require('./certificate-eligibility-issuance.bindings');
+app.use('/api/v1',require('./certificate-eligibility-issuance.composition').assemble(certificates));
+app.use(require('./routes/certificate-management-ui.routes').makePageRouter(certificates));
 app.use(errorHandler);
 module.exports = app;

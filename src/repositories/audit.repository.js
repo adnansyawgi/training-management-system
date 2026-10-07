@@ -164,3 +164,12 @@ module.exports.createAttendanceAudit = async (connection,event) => {
     event.before?JSON.stringify(values(event.before)):null,JSON.stringify(values(event.row)),event.context.ipAddress||null,
     event.context.userAgent?.slice(0,500)||null,event.context.correlationId||null]);
 };
+module.exports.createCertificateIssuedAudit = async(connection,event)=>{
+  const row=event.row;
+  await connection.execute(`INSERT INTO audit_records (event_timestamp,actor_user_id,actor_role,action,entity_type,entity_id,result,
+    change_summary,previous_value,new_value,access_scope,data_classification,ip_address,user_agent,correlation_id)
+    VALUES (?,?,'TRAINING_ADMINISTRATOR','CERTIFICATE_ISSUED','CERTIFICATE',?,'SUCCESS','Certificate issuance recorded.',NULL,?,'ALL_TRAINING_OPERATIONS','PERSONAL_DATA',?,?,?)`,
+  [event.now,event.context.principal.userId,String(row.certificate_id),JSON.stringify({certificateNumber:row.certificate_number,registrationId:String(row.registration_id),
+    status:row.certificate_status,eligibilityStatus:row.eligibility_status,attendancePercentage:Number(row.attendance_percentage),completionDate:row.completion_date,issueDate:row.issue_date}),
+    event.context.ipAddress||null,event.context.userAgent?.slice(0,500)||null,event.context.correlationId||null]);
+};
