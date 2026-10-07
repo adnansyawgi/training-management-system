@@ -1,3 +1,5 @@
+> Historical snapshot: the two bootstrap conflicts below were resolved by explicit user approval on 8 October 2026. The approved signed FK and application loopback-only guard are implemented and verified; see [the bootstrap completion report](CR001-bootstrap-implementation-report.md). The blocked status below describes the earlier implementation stage.
+
 # CR-001 implementation report — 7 October 2026
 
 ## 1. Implementation Status

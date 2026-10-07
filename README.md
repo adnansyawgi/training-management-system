@@ -1,5 +1,81 @@
 # training-management-system
 
+## First System Administrator — approved CR-001 bootstrap
+
+CR-001 requires a controlled, non-public, one-time bootstrap for the first
+System Administrator. Do not use normal registration, a manual database INSERT,
+or the superseded Static Administration Key flow.
+
+The approved bootstrap is implemented with an application-level loopback-only
+TCP peer guard. Invoke it on the application host using `127.0.0.1` or `::1`;
+remote callers receive 403, and forwarding headers do not grant access.
+
+Before invoking it, apply
+`db/migrations/v1.7_cr001_system_admin_bootstrap_state.sql` once to the intended
+database after the existing schema migrations, configure the approved email,
+and restart the application. Review migration history first; do not rerun an
+already-applied migration. No application database was migrated automatically.
+
+### 1. Configure the approved email on the server
+
+Set the deployment-specific value in protected server configuration, such as
+`src/.env`:
+
+```dotenv
+SYSTEM_ADMIN_BOOTSTRAP_APPROVED_EMAIL=admin@yourcompany.com
+```
+
+Use the actual approved address only in protected deployment configuration.
+Never commit it, expose it to the browser or an API, log it, or store it in the
+bootstrap-state table. The address above is illustrative; `src/.env.example`
+documents the configuration name.
+
+### 2. Invoke the controlled bootstrap
+
+From the application host, invoke the endpoint through its loopback address:
+
+```http
+POST /api/v1/auth/system-admin/bootstrap
+Content-Type: application/json
+```
+
+```json
+{
+  "username": "sysadmin",
+  "name": "System Administrator",
+  "email": "admin@yourcompany.com",
+  "password": "<strong-password>"
+}
+```
+
+Replace the example email and password with approved deployment inputs. Submit
+only these four fields; `staticAdministrationKey` is prohibited by CR-001.
+There must be no public administrator-registration button, bootstrap page or
+ordinary navigation link. Email comparison alone does not establish the
+required non-public access boundary.
+
+### 3. Validate, commit and permanently close bootstrap
+
+The backend must acquire concurrency protection, check durable completion state,
+validate the existing administrative account rules and compare the normalized
+submitted email internally with the protected configured email. A mismatch
+must be rejected without revealing the configured value.
+
+On success, the approved implementation hashes the password with existing
+Argon2id handling and atomically creates one ACTIVE `SYSTEM_ADMINISTRATOR`,
+records the mandatory audit event and persists permanent completion in MySQL.
+HTTP 201 follows commit. Account, audit or completion-persistence failure must
+roll back; concurrent valid attempts may produce at most one successful creation.
+
+Every later bootstrap attempt must be rejected, even if the initial administrator
+is disabled, deleted or otherwise changed. Do not manually insert the first
+administrator or reset completion state to bypass this lifecycle.
+
+After provisioning, sign in through `/login` and use the System Administrator
+dashboard's existing user-management function for subsequent account creation
+only where existing approved roles and permissions permit it. CR-001 does not
+expand which account roles that function may create.
+
 WF-001 provides participant account creation at `/register` in the existing
 Express application. Run `npm.cmd install` and `npm.cmd start` from `src`, then
 open `http://localhost:3000/register` (or the configured `PORT`). The existing API
@@ -292,7 +368,7 @@ WF-004 System Administrator Authentication
 Implemented from the WF-004 backend v1.2 and UI v1.4 documents in
 `docs/implementation-code`. Open `/admin/login`; the public API is
 `POST /api/v1/auth/system-admin/login`. Submit only `email` and `password`.
-Generated/supplied usernames and the bootstrap static key are not login inputs.
+Generated/supplied usernames are not login inputs.
 Email is normalized; the password is preserved and verified against Argon2id
 without applying account-creation complexity rules.
 
@@ -346,103 +422,17 @@ not modified; disposable test infrastructure was removed after verification.
 `git diff --check` passed. These checks are implementation evidence, not formal
 production/release approval.
 
-WF-003 System Administrator Bootstrap
--------------------------------------
+WF-003 System Administrator Bootstrap — superseded by CR-001
+-----------------------------------------------------------
 
-Implemented from the WF-003 backend v1.2 and UI v1.4 implementation documents
-and WF-003 implementation specification v1.3. Open `/admin/bootstrap` to create
-the initial eligible System Administrator. The public API is
-`POST /api/v1/auth/system-admin/bootstrap` and accepts only:
-
-```json
-{
-  "staticAdministrationKey": "<deployment-key>",
-  "username": "administrator-entered-username",
-  "name": "Administrator Name",
-  "email": "administrator@example.test",
-  "password": "<password-meeting-creation-policy>"
-}
-```
-
-Username is required, administrator-entered and unique; it is not derived from
-email or name. The server generates `A-<ULID>`, assigns canonical
-`SYSTEM_ADMINISTRATOR` role and ACTIVE status, and hashes the password with
-Argon2id. Username/name/email limits are 100/200/254 characters. Password uses
-the existing creation policy: at least 12 characters with uppercase, lowercase,
-digit and non-alphanumeric character.
-
-### WF-003 configuration
-
-Set `STATIC_ADMINISTRATION_KEY` to a unique deployment-secret value in `src/.env`
-or the deployment secret store. Use the random generation command in the session
-setup section to generate a separate key; do not reuse `SESSION_SECRET`.
-Missing deployment configuration fails closed with sanitized 500. When a key
-is configured, missing/invalid submitted keys return generic 401.
-
-Copy these approved initial role defaults from `.env.example` to `src/.env`:
-
-```dotenv
-SYSTEM_ADMINISTRATOR_PERMISSIONS_JSON='["ADMIN_USER_CREATE","ADMIN_USER_READ","ADMIN_USER_UPDATE"]'
-SYSTEM_ADMINISTRATOR_ACCESS_SCOPE_JSON='["ALL_ADMINISTRATIVE_USERS"]'
-SYSTEM_ADMINISTRATOR_RESPONSIBILITIES_JSON='["MANAGE_ADMINISTRATIVE_USERS"]'
-```
-
-The configured reserved audit actor must already exist. Restart the application
-after configuration changes. No WF-003 migration is required: the existing
-`users` and `audit_records` schema supports bootstrap, and the concurrency gate
-uses MySQL advisory locks. Existing WF-002 startup/session prerequisites still
-apply. Static administration keys and actual session secrets must remain out of
-source control; the example configuration contains empty secret placeholders.
-
-### WF-003 consistency, audit and navigation
-
-A database-scoped MySQL advisory lock covers the eligibility check and the
-account/audit transaction, including the case where no active administrator
-row exists. Bootstrap is allowed only when no ACTIVE SYSTEM_ADMINISTRATOR
-exists. The reserved DISABLED/SYSTEM actor does not block bootstrap. A lock
-acquisition failure returns sanitized 500; a connection whose lock cannot be
-released is discarded rather than returned to the pool.
-
-Duplicate username/email and an existing active administrator return sanitized
-409. Exact unique-index names from v1.0 are used; arbitrary duplicate values are
-never treated as constraint names. Generated account-identifier collisions retry
-at most three times. All successful account/audit writes use one connection and
-transaction; failures roll back. Unsafe numeric response IDs fail before commit.
-
-The reserved technical actor attributes the successful `ACCOUNT_CREATED` event
-for entity `SYSTEM_ADMINISTRATOR_ACCOUNT`; scope is `ALL_ADMINISTRATIVE_USERS`
-and classification is `PERSONAL_DATA`. Rejected 401/409 outcomes produce a
-separate `BOOTSTRAP_REJECTED` / `FAILURE` event with reference `ANONYMOUS` after
-any bootstrap transaction is rolled back. No submitted key, password or hash
-is stored in audit rows or returned/logged. Failed rejection-audit persistence
-returns sanitized 500 rather than claiming a fully audited rejection.
-
-Success returns exactly
-`{ userId, accountIdentifier, username, role, accountStatus, createdAt }`
-with HTTP 201. No participant profile, session cookie or notification is
-created. The browser clears both secrets and navigates to `/admin/login`.
-That destination now serves WF-004 System Administrator Login. Bootstrap itself
-does not authenticate the newly created administrator.
-
-The advisory-lock gate, duplicate username/email mapping, technical audit actor,
-ACTIVE role defaults and UI URLs were explicitly approved during implementation.
-
-### WF-003 tests
-
-Verification on 7 October 2026: **26 suites and 216 tests passed**, including
-both WF-002 and WF-003 isolated MySQL suites. Concurrent bootstrap returned one
-201 and one 409 with one committed active administrator; injected user/audit
-failures left no partial account. The application database was not modified.
-`git diff --check` passed.
-
-Run `npm.cmd test` from `src` for unit/API/DOM tests. Isolated MySQL verification
-is enabled with `WF003_TEST_DB_HOST`, `WF003_TEST_DB_PORT`,
-`WF003_TEST_DB_USER`, `WF003_TEST_DB_PASSWORD`, and `WF003_TEST_DB_NAME`.
-Use a disposable instance and a fresh database named
-`tms_wf003_<unique-name>_test`; the suite refuses an existing database. It applies
-the existing migrations only in the fresh test schema, injects account/audit
-failures, and checks concurrent bootstrap, duplicates, credential hashing,
-rejection audit and the absence of participant profiles and sessions.
+Use the CR-001 approved-email instructions at the top of this README. The public
+bootstrap page, static administration key and old browser bootstrap form/script
+have been removed. The retained API is loopback-only. The signed bootstrap-state
+foreign key matches `users.user_id`; `ON DELETE SET NULL` preserves permanent
+completion if the initial administrator is deleted. No public reset API exists.
+The existing MySQL advisory lock serializes bootstrap attempts; account creation,
+mandatory audit and completion update share one transaction. Missing/invalid
+approved-email configuration fails bootstrap safely with a sanitized 500.
 
 WF-005 Administrative User Creation
 ----------------------------------

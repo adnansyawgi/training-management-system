@@ -1,11 +1,11 @@
 const { makeService } = require('../../../src/services/system-administrator-bootstrap.service');
 const { errors } = require('../../../src/auth/authentication-errors');
 const { makeResponseCodec } = require('../../../src/utils/implementation-response-codec');
-const input = { staticAdministrationKey: 'secret-key', username: 'entered-admin', name: 'Admin', email: 'admin@example.test', password: 'StrongPassword@123' };
+const input = { username: 'entered-admin', name: 'Admin', email: 'admin@example.test', password: 'StrongPassword@123' };
 let d;
 beforeEach(() => {
-  d = { keys: { verify: jest.fn() }, passwords: { hashPassword: jest.fn().mockResolvedValue('argon2-hash') },
-    bootstrap: { withExclusiveEligibility: jest.fn(async callback => callback('connection')) },
+  d = { approvedEmail: { verify: jest.fn() }, passwords: { hashPassword: jest.fn().mockResolvedValue('argon2-hash') },
+    bootstrap: { withExclusiveEligibility: jest.fn(async callback => callback('connection')), findBootstrapCompletionState: jest.fn().mockResolvedValue({completed_at:null}), markBootstrapCompleted: jest.fn() },
     users: { hasActiveSystemAdministrator: jest.fn().mockResolvedValue(false) },
     roles: { resolve: jest.fn().mockResolvedValue({ accountStatus: 'ACTIVE', permissions: ['ADMIN_USER_CREATE'], accessScope: ['ALL_ADMINISTRATIVE_USERS'], permittedResponsibilities: ['MANAGE_ADMINISTRATIVE_USERS'] }) },
     clock: { now: () => new Date('2026-10-07T01:00:00Z') }, accounts: { createWithIdentifierRetry: jest.fn().mockResolvedValue({ userId: '12', accountIdentifier: 'A-generated' }) },
@@ -19,11 +19,11 @@ test('preserves entered username and atomically creates canonical account/audit 
   expect(d.audit.bootstrap.mock.calls[0][1]).not.toHaveProperty('staticAdministrationKey');
   expect(d.roles.resolve).toHaveBeenCalledWith('connection', 'SYSTEM_ADMINISTRATOR');
 });
-test('invalid key rejects before hashing or acquiring the gate and records rejection', async () => {
-  d.keys.verify.mockRejectedValue(errors.authentication());
+test('incorrect email rejects under the gate before hashing and records rejection', async () => {
+  d.approvedEmail.verify.mockRejectedValue(errors.authentication());
   await expect(makeService(d).bootstrap(input, {})).rejects.toMatchObject({ status: 401 });
   expect(d.passwords.hashPassword).not.toHaveBeenCalled();
-  expect(d.bootstrap.withExclusiveEligibility).not.toHaveBeenCalled();
+  expect(d.bootstrap.withExclusiveEligibility).toHaveBeenCalled();
   expect(d.audit.bootstrapRejected).toHaveBeenCalledWith({});
 });
 test('existing active administrator rejects before any account insert', async () => {

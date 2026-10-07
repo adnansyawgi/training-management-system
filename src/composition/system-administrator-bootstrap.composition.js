@@ -6,8 +6,8 @@ const { makeResponseCodec } = require('../utils/implementation-response-codec');
 const { makeResponseTransport } = require('../utils/implementation-response-transport');
 const { errors } = require('../auth/authentication-errors');
 function assemble({ repositoriesAndServices, requestContext }) {
-  for (const name of ['keys.verify', 'passwords.hashPassword', 'bootstrap.withExclusiveEligibility',
-    'users.hasActiveSystemAdministrator', 'roles.resolve', 'clock.now', 'accounts.createWithIdentifierRetry', 'audit.bootstrap']) {
+  for (const name of ['approvedEmail.verify', 'passwords.hashPassword', 'bootstrap.withExclusiveEligibility',
+    'bootstrap.findBootstrapCompletionState', 'bootstrap.markBootstrapCompleted', 'users.hasActiveSystemAdministrator', 'roles.resolve', 'clock.now', 'accounts.createWithIdentifierRetry', 'audit.bootstrap']) {
     const [group, method] = name.split('.');
     if (typeof repositoriesAndServices?.[group]?.[method] !== 'function') throw new Error('Missing bootstrap adapter: ' + name);
   }

@@ -7,7 +7,7 @@ const enabled = process.env.WF005_TEST_DB_PORT && process.env.WF005_TEST_DB_NAME
   let admin, pool, app, cookie, csrf;
   const database = process.env.WF005_TEST_DB_NAME;
   const saved = { ...process.env };
-  const administrator = { staticAdministrationKey: 'isolated-bootstrap-key', username: 'admin', name: 'Admin', email: 'admin@example.test', password: 'StrongPassword@123' };
+  const administrator = { username: 'admin', name: 'Admin', email: 'admin@example.test', password: 'StrongPassword@123' };
   const input = { username: 'entered-staff', name: 'Staff', email: 'staff@example.test', password: 'StrongPassword@123', role: 'TRAINER' };
   const create = (overrides = {}, token = csrf) => request(app).post('/api/v1/admin/users').set('Cookie', cookie).set('X-CSRF-Token', token).send({ ...input, ...overrides });
   beforeAll(async () => {
@@ -15,13 +15,13 @@ const enabled = process.env.WF005_TEST_DB_PORT && process.env.WF005_TEST_DB_NAME
     admin = await mysql.createConnection({ host: process.env.WF005_TEST_DB_HOST || '127.0.0.1', port: Number(process.env.WF005_TEST_DB_PORT),
       user: process.env.WF005_TEST_DB_USER || 'root', password: process.env.WF005_TEST_DB_PASSWORD, multipleStatements: true });
     await admin.query(`CREATE DATABASE \`${database}\``); await admin.query(`USE \`${database}\``);
-    for (const file of ['v1.0_participant-account-schema.sql', 'v1.1_participant-authentication-schema.sql']) {
+    for (const file of ['v1.0_participant-account-schema.sql', 'v1.1_participant-authentication-schema.sql', 'v1.7_cr001_system_admin_bootstrap_state.sql']) {
       await admin.query(fs.readFileSync(path.join(__dirname, '../../db/migrations', file), 'utf8'));
     }
     const [actors] = await admin.query("SELECT account_identifier FROM users WHERE authentication_method = 'SYSTEM'");
     Object.assign(process.env, { DB_HOST: process.env.WF005_TEST_DB_HOST || '127.0.0.1', DB_PORT: process.env.WF005_TEST_DB_PORT,
       DB_USER: process.env.WF005_TEST_DB_USER || 'root', DB_PASSWORD: process.env.WF005_TEST_DB_PASSWORD, DB_NAME: database,
-      STATIC_ADMINISTRATION_KEY: administrator.staticAdministrationKey, SYSTEM_AUDIT_ACTOR_ACCOUNT_IDENTIFIER: actors[0].account_identifier,
+      SYSTEM_ADMIN_BOOTSTRAP_APPROVED_EMAIL: administrator.email, SYSTEM_AUDIT_ACTOR_ACCOUNT_IDENTIFIER: actors[0].account_identifier,
       SESSION_SECRET: 'isolated-administrative-session-secret-'.repeat(3), SESSION_COOKIE_SECURE: 'false',
       SYSTEM_ADMINISTRATOR_PERMISSIONS_JSON: '["ADMIN_USER_CREATE","ADMIN_USER_READ","ADMIN_USER_UPDATE"]',
       SYSTEM_ADMINISTRATOR_ACCESS_SCOPE_JSON: '["ALL_ADMINISTRATIVE_USERS"]', SYSTEM_ADMINISTRATOR_RESPONSIBILITIES_JSON: '["MANAGE_ADMINISTRATIVE_USERS"]',

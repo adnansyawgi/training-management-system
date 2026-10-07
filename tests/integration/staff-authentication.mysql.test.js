@@ -7,7 +7,7 @@ const enabled = process.env.WF006_TEST_DB_PORT && process.env.WF006_TEST_DB_NAME
   let admin, pool, app, sessions;
   const database = process.env.WF006_TEST_DB_NAME;
   const saved = { ...process.env };
-  const input = { staticAdministrationKey: 'isolated-bootstrap-key', username: 'entered-admin', name: 'Admin', email: 'admin@example.test', password: 'StrongPassword@123' };
+  const input = { username: 'entered-admin', name: 'Admin', email: 'admin@example.test', password: 'StrongPassword@123' };
   const login = overrides => request(app).post('/api/v1/auth/staff/login').send({ email: input.email, password: input.password, ...overrides });
   beforeAll(async () => {
     if (!/^tms_wf006_[a-z0-9_]+_test$/.test(database)) throw new Error('Fresh dedicated WF-006 test database required.');
@@ -15,13 +15,13 @@ const enabled = process.env.WF006_TEST_DB_PORT && process.env.WF006_TEST_DB_NAME
       user: process.env.WF006_TEST_DB_USER || 'root', password: process.env.WF006_TEST_DB_PASSWORD, multipleStatements: true });
     await admin.query(`CREATE DATABASE \`${database}\``);
     await admin.query(`USE \`${database}\``);
-    for (const file of ['v1.0_participant-account-schema.sql', 'v1.1_participant-authentication-schema.sql']) {
+    for (const file of ['v1.0_participant-account-schema.sql', 'v1.1_participant-authentication-schema.sql', 'v1.7_cr001_system_admin_bootstrap_state.sql']) {
       await admin.query(fs.readFileSync(path.join(__dirname, '../../db/migrations', file), 'utf8'));
     }
     const [actors] = await admin.query("SELECT account_identifier FROM users WHERE authentication_method = 'SYSTEM'");
     Object.assign(process.env, { DB_HOST: process.env.WF006_TEST_DB_HOST || '127.0.0.1', DB_PORT: process.env.WF006_TEST_DB_PORT,
       DB_USER: process.env.WF006_TEST_DB_USER || 'root', DB_PASSWORD: process.env.WF006_TEST_DB_PASSWORD, DB_NAME: database,
-      STATIC_ADMINISTRATION_KEY: input.staticAdministrationKey, SYSTEM_AUDIT_ACTOR_ACCOUNT_IDENTIFIER: actors[0].account_identifier,
+      SYSTEM_ADMIN_BOOTSTRAP_APPROVED_EMAIL: input.email, SYSTEM_AUDIT_ACTOR_ACCOUNT_IDENTIFIER: actors[0].account_identifier,
       SESSION_SECRET: 'isolated-admin-session-secret-'.repeat(3), SESSION_COOKIE_SECURE: 'false',
       SYSTEM_ADMINISTRATOR_PERMISSIONS_JSON: '["ADMIN_USER_CREATE","ADMIN_USER_READ","ADMIN_USER_UPDATE"]',
       SYSTEM_ADMINISTRATOR_ACCESS_SCOPE_JSON: '["ALL_ADMINISTRATIVE_USERS"]', SYSTEM_ADMINISTRATOR_RESPONSIBILITIES_JSON: '["MANAGE_ADMINISTRATIVE_USERS"]' });

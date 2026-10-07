@@ -6,13 +6,12 @@ const validate = body => {
   makeValidators({ errors }).bootstrap(req, {}, next);
   return { error: next.mock.calls[0][0], input: req.validatedInput };
 };
-const valid = { staticAdministrationKey: ' key ', username: ' administrator ', name: ' Name ', email: ' ADMIN@EXAMPLE.TEST ', password: 'StrongPassword@123' };
-test('accepts the five fields, preserving entered username and secret values', () => {
+const valid = { username: ' administrator ', name: ' Name ', email: ' ADMIN@EXAMPLE.TEST ', password: 'StrongPassword@123' };
+test('accepts the four fields, normalizing email and preserving password', () => {
   expect(validate(valid)).toEqual({ error: undefined, input: { ...valid, username: 'administrator', name: 'Name', email: 'admin@example.test' } });
 });
-test('missing key reaches service authentication handling rather than validation 400', () => {
-  const { staticAdministrationKey, ...body } = valid;
-  expect(validate(body).error).toBeUndefined();
+test('legacy static key is rejected rather than ignored', () => {
+  expect(validate({ ...valid, staticAdministrationKey: 'old-key' }).error.status).toBe(400);
 });
 test.each(['username', 'name', 'email', 'password'])('requires %s', field => {
   const body = { ...valid }; delete body[field];

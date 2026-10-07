@@ -72,6 +72,18 @@ function makeBootstrapRepository({ pool, errors, generateIdentifier = () => `A-$
     }
     throw new Error('Account identifier retry exhausted.');
   }
-  return { withExclusiveEligibility, hasActiveSystemAdministrator, createWithIdentifierRetry };
+  async function findBootstrapCompletionState(connection) {
+    const [rows] = await connection.execute('SELECT completed_at FROM system_administrator_bootstrap_state WHERE state_id = 1 FOR UPDATE');
+    if (rows.length !== 1) throw new Error('Bootstrap state is unavailable.');
+    return rows[0];
+  }
+  async function markBootstrapCompleted(connection, userId, now) {
+    const [result] = await connection.execute(`UPDATE system_administrator_bootstrap_state
+      SET completed_at = ?, administrator_user_id = ?, updated_at = ?
+      WHERE state_id = 1 AND completed_at IS NULL`, [now, positiveId(userId), now]);
+    if (result.affectedRows !== 1) throw errors.conflict();
+  }
+  return { withExclusiveEligibility, findBootstrapCompletionState, markBootstrapCompleted,
+    hasActiveSystemAdministrator, createWithIdentifierRetry };
 }
 module.exports = { makeBootstrapRepository };

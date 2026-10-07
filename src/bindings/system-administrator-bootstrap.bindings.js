@@ -1,6 +1,6 @@
 const pool = require('../config/database');
 const { errors } = require('../auth/authentication-errors');
-const { makeStaticAdministrationKey } = require('../auth/static-administration-key');
+const { makeApprovedBootstrapEmail } = require('../auth/bootstrap-approved-email');
 const { makeBootstrapRepository } = require('../repositories/system-administrator-bootstrap.repository');
 const { resolveSystemAdministratorRoleDefaults } = require('../auth/system-administrator-role-defaults');
 const { hashPassword } = require('../auth/password-hasher');
@@ -8,7 +8,7 @@ const { createSystemAdministratorBootstrapAudit, createSystemAdministratorBootst
 const repository = makeBootstrapRepository({ pool, errors });
 module.exports = {
   repositoriesAndServices: {
-    keys: makeStaticAdministrationKey({ errors }), passwords: { hashPassword },
+    approvedEmail: makeApprovedBootstrapEmail({ errors }), passwords: { hashPassword },
     bootstrap: repository, users: repository, accounts: repository,
     roles: { resolve: resolveSystemAdministratorRoleDefaults }, clock: { now: () => new Date() },
     audit: { bootstrap: createSystemAdministratorBootstrapAudit,

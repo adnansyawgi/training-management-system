@@ -94,7 +94,7 @@ async function createSystemAdministratorBootstrapAudit(connection, event) {
     event_timestamp, actor_user_id, actor_role, action, entity_type, entity_id, result,
     change_summary, previous_value, new_value, access_scope, data_classification,
     ip_address, user_agent, correlation_id
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [event.occurredAt, actorId, 'SYSTEM_ADMINISTRATOR', 'ACCOUNT_CREATED', 'SYSTEM_ADMINISTRATOR_ACCOUNT', String(event.userId), 'SUCCESS', 'System Administrator created through static-key bootstrap.', null, JSON.stringify({
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [event.occurredAt, actorId, 'SYSTEM_ADMINISTRATOR', 'ACCOUNT_CREATED', 'SYSTEM_ADMINISTRATOR_ACCOUNT', String(event.userId), 'SUCCESS', 'System Administrator created through controlled one-time bootstrap.', null, JSON.stringify({
     userId: String(event.userId)
   }), 'ALL_ADMINISTRATIVE_USERS', 'PERSONAL_DATA', event.context.ipAddress || null, event.context.userAgent?.slice(0, 500) || null, event.context.correlationId || null]);
 }
