@@ -1,3 +1,4 @@
+const { publicProgramPredicate } = require('./public-program-policy');
 const sorts = Object.freeze({ DATE_ASC: 'p.training_date ASC', DATE_DESC: 'p.training_date DESC',
   NAME_ASC: 'p.name ASC', NAME_DESC: 'p.name DESC' });
 const seats = 'p.capacity - COALESCE(r.used, 0)';
@@ -11,7 +12,7 @@ function makeCatalogueRepository({ pool }) {
       const sort = sorts[filter.sort];
       if (!sort || !Number.isSafeInteger(filter.offset) || filter.offset < 0 ||
           !Number.isInteger(filter.pageSize) || filter.pageSize < 1 || filter.pageSize > 100) throw new Error('Invalid catalogue binding.');
-      const predicates = ["p.status IN ('OPEN', 'CLOSED')", "c.status = 'ACTIVE'"];
+      const predicates = [publicProgramPredicate];
       const values = [];
       if (filter.categoryId !== undefined) { predicates.push('p.category_id = ?'); values.push(filter.categoryId); }
       if (filter.availability === 'AVAILABLE') predicates.push(`${seats} > 0`);

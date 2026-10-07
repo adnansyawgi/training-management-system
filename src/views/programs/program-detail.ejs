@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Program Details | Training Management System</title>
+  <link href="<%= bootstrapCssUrl %>" rel="stylesheet" integrity="<%= bootstrapCssIntegrity %>" crossorigin="anonymous">
+  <link href="<%= appCssUrl %>" rel="stylesheet">
+</head>
+<body class="bg-light" data-workflow="WF-008" data-program-id="<%= programId %>" data-registration-url-template="<%= programRegistrationUrlTemplate %>">
+<main class="container py-4">
+  <div id="pageMessage" class="alert d-none" role="alert" aria-live="polite"></div>
+  <article class="card shadow-sm" aria-busy="true" id="programArticle"><div class="card-body">
+    <h1 id="programName" class="h4">Program Details</h1>
+    <p id="programDescription"></p><dl class="row" id="programDetail"></dl>
+    <div class="d-flex gap-2"><a href="<%= programListUrl %>" class="btn btn-outline-secondary">Back</a>
+      <a id="registerLink" class="btn btn-primary d-none">Register</a></div>
+  </div></article>
+</main>
+<script src="<%= programDetailJsUrl %>" defer></script>
+</body>
+</html>

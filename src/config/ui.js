@@ -20,5 +20,7 @@ module.exports = Object.freeze({
   trainingAdministratorLandingUrl: '/admin/programs',
   trainerLandingUrl: '/trainer/programs',
   programListJsUrl: '/js/program-list.js',
-  programDetailsBaseUrl: '/programs'
+  programDetailsBaseUrl: '/programs',
+  programDetailJsUrl: '/js/program-detail.js',
+  programRegistrationUrlTemplate: '/programs/:programId/register'
 });

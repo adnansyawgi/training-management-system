@@ -599,8 +599,8 @@ private program fields are excluded.
 The browser uses bounded pages of 20, resets to page 1 when filters change,
 prevents overlapping requests and displays fixed safe error/empty messages.
 Program text uses DOM textContent and category names use escaped EJS.
-View Details links target `/programs/:programId` for future WF-008; detail pages
-are outside WF-007 and remain unimplemented. The catalogue rules, schema and
+View Details links target `/programs/:programId`, now implemented by WF-008.
+The catalogue rules, schema and
 UI bindings were approved during implementation. No catalogue audit event or
 notification is introduced by this read-only workflow.
 
@@ -619,3 +619,48 @@ live isolated MySQL WF-002 through WF-007 suites. The application database was
 inspected read-only and was not modified. The disposable test container was
 removed. `git diff --check` passed. This is implementation evidence, not formal
 production/release approval.
+
+WF-008 View Training Program Details
+------------------------------------
+
+Implemented from the WF-008 backend v1.2 and UI v1.4 documents. Open
+`/programs/:programId` from the catalogue's View Details link. The page is public
+and loads `GET /api/v1/programs/:programId`. No new migration or environment
+setting is required; the WF-007 v1.2 schema must already be applied.
+
+Details share the WF-007 public predicate: OPEN/CLOSED programs in ACTIVE
+categories. Missing and non-visible records return the same 404. Positive safe
+integer IDs are required; malformed/unsafe IDs and unknown query fields return
+400. Unexpected database/response failures return sanitized 500. The HTML page
+is a public shell; its API request determines whether the program is visible.
+
+Success contains exactly 25 fields: `programId`, `code`, `name`, `description`,
+`objectives`, `targetAudience`, `prerequisites`, `categoryId`, `categoryName`,
+`trainerName`, `trainingDate`, `startTime`, `endTime`, `venue`, `deliveryMode`,
+`capacity`, `availableSeats`, `status`, `registrationOpenAt`,
+`registrationCloseAt`, `cancellationPolicyReference`,
+`certificateEligibilityCriteria`, `certificateType`, `createdAt` and `updatedAt`.
+Only the trainer display name is public; trainer ID, email, credentials and
+account controls are excluded. Dates, times and UTC timestamps use the existing
+response codecs. Nullable optional values remain null in the API.
+
+A single parameterized SELECT reads detail and derives available seats from
+capacity minus current REGISTERED registrations. CANCELLED history is excluded.
+The page renders values using textContent. Back returns to `/programs`.
+Register is shown only for OPEN programs with seats remaining, and navigates to
+`/programs/:programId/register`, the proposed future WF-009 target. That page is
+not implemented by WF-008. Browser visibility does not establish registration
+eligibility: WF-009 must authenticate and revalidate role, window and capacity
+before creating any registration. This workflow adds no writes, session, audit
+or notification events.
+
+Run `npm.cmd test` from `src`. Live verification uses `WF008_TEST_DB_HOST`,
+`WF008_TEST_DB_PORT`, `WF008_TEST_DB_USER`, `WF008_TEST_DB_PASSWORD` and a fresh
+`WF008_TEST_DB_NAME` matching `tms_wf008_<unique-name>_test`. The suite creates a
+fresh disposable schema using existing migrations, checks public visibility,
+current seat counts, nullable detail data, trainer privacy and the absence of
+registration/session/audit writes. Existing application data is not modified.
+
+Verification on 7 October 2026: **48 suites and 484 tests passed**, including
+live isolated MySQL WF-002 through WF-008 suites. The disposable test container
+was removed; the application database was not modified. `git diff --check` passed.

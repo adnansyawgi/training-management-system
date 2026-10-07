@@ -27,5 +27,7 @@ app.use(require('./routes/administrative-user-creation.routes').makePageRouter(a
 const catalogue = require('./program-catalogue.bindings');
 app.use('/api/v1', require('./program-catalogue.composition').assemble(catalogue));
 app.use(require('./routes/program-catalogue-ui.routes').makePageRouter(catalogue));
+app.use('/api/v1', require('./program-details.composition').assemble(require('./program-details.bindings')));
+app.use(require('./routes/program-details-ui.routes').makePageRouter());
 app.use(errorHandler);
 module.exports = app;
