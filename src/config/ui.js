@@ -28,5 +28,7 @@ module.exports = Object.freeze({
   myRegistrationsJsUrl: '/js/my-registrations.js',
   businessTimeJsUrl: '/js/business-time.js',
   categoryManagementUrl: '/admin/categories',
-  programManagementJsUrl: '/js/program-management.js'
+  programManagementJsUrl: '/js/program-management.js',
+  registrationManagementUrl: '/admin/registrations',
+  registrationManagementJsUrl: '/js/registration-management.js'
 });

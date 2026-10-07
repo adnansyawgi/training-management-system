@@ -888,3 +888,52 @@ control, CSRF, DTOs, defaults, duplicate handling, lifecycle and capacity rules,
 trainer/participant conflicts, concurrent creation, escaped management pages,
 business-time conversion and rollback on audit failure. Tests use disposable
 databases and do not send real email.
+
+
+WF-012 Registration Management View
+------------------------------------
+
+Sign in as a **Training Administrator** at `/staff/login`, then open
+`/admin/registrations` or follow Registrations from the program/category
+management pages. Implemented from WF-012 backend v1.2 and UI v1.4 with approved
+repository bindings. No migration or new environment setting is required.
+
+- `GET /api/v1/admin/registrations` returns `{items,page,pageSize,total}`. Each
+  item contains exactly registrationId, referenceNo, participantId, programId,
+  registeredAt, status, cancelledAt and cancellationReason.
+- `GET /api/v1/admin/registrations/:registrationId` returns those eight fields
+  plus registrationRemarks. Missing records return 404.
+
+Both APIs and the page require a live Training Administrator session, the
+stored `REGISTRATION_READ` permission and `ALL_TRAINING_OPERATIONS` access scope.
+Other roles receive 403; unauthenticated requests receive 401. Scope/permission
+revocation takes effect on subsequent reads. Scope predicates apply consistently
+to list rows, totals and details; count and rows use one read-only repeatable-read
+snapshot. Operational registrations include cancelled history and records in
+inactive categories or unpublished programs.
+
+Optional filters are periodFrom, periodTo, programId, categoryId, participantId
+and REGISTERED/CANCELLED status. Periods filter **registeredAt**, including
+periodFrom and excluding periodTo, and accept ISO timestamps with explicit
+zones. Forms convert `BUSINESS_TIMEZONE` inputs to UTC. Program, category and
+student filters use positive numeric IDs; no lookup API or participant PII is
+added. Unsafe IDs, duplicate query keys, unknown fields and invalid periods are
+rejected with 400.
+
+Pagination defaults to page 1 and 20 rows, capped at 100. Allowed sorts are
+REGISTERED_AT_DESC (default), REGISTERED_AT_ASC, DATE_ASC and DATE_DESC, with
+registrationId ascending as the deterministic tie-breaker. DATE sorts use the
+program training date.
+
+The page supports Search, Clear, View and Back. View fetches the detail endpoint
+rather than reusing a list item. Values render through escaped EJS/textContent;
+errors use fixed messages and stale responses cannot replace newer results.
+This feature provides no administrative cancellation, approval, rejection,
+editing, registration writes, read audits or notifications.
+
+Verification on 7 October 2026: **62 suites and 674 tests passed**, including
+live isolated MySQL WF-002 through WF-012 suites. WF-012 coverage includes exact
+DTOs, filtering and UTC boundaries, deterministic pagination, all role exclusions,
+permission/scope revocation, concurrent snapshot consistency, read-only behavior,
+safe detail rendering, browser errors, pagination and stale-response handling.
+The disposable test container was removed; the application database was unchanged.

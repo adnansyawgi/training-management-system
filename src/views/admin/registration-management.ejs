@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registration Management | Training Management System</title>
+  <link rel="stylesheet" href="<%= bootstrapCssUrl %>" integrity="<%= bootstrapCssIntegrity %>" crossorigin="anonymous">
+  <link rel="stylesheet" href="<%= appCssUrl %>">
+  <script defer src="<%= businessTimeJsUrl %>"></script><script defer src="<%= workflowJsUrl %>"></script>
+</head>
+<body class="bg-light" data-workflow="WF-012" data-timezone="<%= businessTimezone %>">
+<main class="container py-4">
+  <nav><a href="<%= trainingAdministratorLandingUrl %>">Programs</a> · <a href="<%= categoryManagementUrl %>">Categories</a></nav>
+  <h1 class="h4 mt-3">Registration Management</h1>
+  <div id="pageMessage" class="alert d-none" role="alert" aria-live="polite"></div>
+  <p>Filter by program, category or student ID. Date range inputs use <%= businessTimezone %>.</p>
+  <form id="filterForm" class="row g-3 mb-3">
+    <div class="col-md-3"><label for="periodFrom" class="form-label">Registered from (inclusive)</label><input id="periodFrom" name="periodFrom" type="datetime-local" step="1" class="form-control"></div>
+    <div class="col-md-3"><label for="periodTo" class="form-label">Registered before (exclusive)</label><input id="periodTo" name="periodTo" type="datetime-local" step="1" class="form-control"></div>
+    <% for(const [name,label] of [['programId','Program ID'],['categoryId','Category ID'],['participantId','Student ID']]){ %>
+    <div class="col-md-2"><label for="<%= name %>" class="form-label"><%= label %></label><input id="<%= name %>" name="<%= name %>" type="number" min="1" max="9007199254740991" step="1" class="form-control"></div>
+    <% } %>
+    <div class="col-md-3"><label for="status" class="form-label">Status</label><select id="status" name="status" class="form-select"><option value="">All</option><option>REGISTERED</option><option>CANCELLED</option></select></div>
+    <div class="col-md-3"><label for="sort" class="form-label">Sort</label><select id="sort" name="sort" class="form-select"><% for(const item of sortOptions){ %><option value="<%= item.value %>" <%= item.value===defaultSort?'selected':'' %>><%= item.label %></option><% } %></select></div>
+    <div class="col-md-2"><label for="pageSize" class="form-label">Rows per page</label><input id="pageSize" name="pageSize" type="number" min="1" max="100" step="1" value="20" required class="form-control"></div>
+    <div class="col-md-4 d-flex align-items-end gap-2"><button class="btn btn-primary" type="submit">Search</button><button id="clearSearch" type="button" class="btn btn-outline-secondary">Clear</button></div>
+  </form>
+  <div class="table-responsive"><table class="table"><thead><tr><th>Reference</th><th>Student ID</th><th>Program ID</th><th>Status</th><th>Action</th></tr></thead><tbody id="registrationRows"></tbody></table></div>
+  <p id="emptyState" class="d-none">No registrations match these filters.</p>
+  <nav class="d-flex justify-content-between mt-3" aria-label="Registration pages"><button type="button" id="previousPage" class="btn btn-outline-secondary" disabled>Previous</button><span id="pageInfo" aria-live="polite"></span><button type="button" id="nextPage" class="btn btn-outline-secondary" disabled>Next</button></nav>
+  <section id="registrationDetail" class="card card-body mt-3 d-none" aria-labelledby="detailHeading"><h2 id="detailHeading" class="h5" tabindex="-1">Registration detail</h2><dl id="registrationDetailFields" class="row"></dl><button id="closeDetail" class="btn btn-outline-secondary" type="button">Back</button></section>
+</main>
+</body>
+</html>
