@@ -12,7 +12,7 @@ function makeRegistrationRepository({ pool, errors, reference = () => 'R-' + uli
       } catch (error) { try { await connection.rollback(); } catch { /* preserve failure */ } throw error; }
       finally { connection.release(); }
     },
-    async lockParticipant(connection, context) {
+    async lockParticipant(connection, context, requireComplete = true) {
       const [profiles] = await connection.execute('SELECT participant_id,user_id,name,mobile_no,nric_passport_no FROM participants WHERE user_id = ? FOR UPDATE', [v.positiveId(context.principal.userId)]);
       if (profiles.length !== 1 || !v.sameId(profiles[0].participant_id, context.principal.participantId)) throw errors.authentication();
       const participant = profiles[0];
@@ -25,7 +25,7 @@ function makeRegistrationRepository({ pool, errors, reference = () => 'R-' + uli
       const data = JSON.parse(sessions[0].session_data), absolute = new Date(data.absoluteExpiresAt);
       if (!Number.isFinite(absolute.getTime()) || absolute <= now || data.role !== 'PARTICIPANT' ||
           !v.sameId(data.userId, participant.user_id) || !v.sameId(data.participantId, participant.participant_id) || data.csrfToken !== context.principal.csrfToken) throw errors.authentication();
-      try { v.text(200)(participant.name); v.text(30)(participant.mobile_no); v.text(50)(participant.nric_passport_no); v.email(user.email); }
+      try { if (requireComplete) { v.text(200)(participant.name); v.text(30)(participant.mobile_no); v.text(50)(participant.nric_passport_no); v.email(user.email); } }
       catch { throw errors.validation(); }
       return { ...participant, email: user.email };
     },

@@ -760,3 +760,79 @@ Verification on 7 October 2026: **53 suites and 548 tests passed**, including
 live isolated MySQL WF-002 through WF-009 suites. Application schema inspection
 was read-only; application data was not modified. The disposable test container
 was removed and no real email was sent. `git diff --check` passed.
+
+WF-010 Participant Registration Cancellation
+--------------------------------------------
+
+Implemented from the WF-010 backend v1.2 and UI v1.4 documents. Sign in as a
+Participant and open `/registrations` for My Registrations. The page and APIs
+reuse the existing session and CSRF controls. No new migration, dependency or
+environment setting is needed; existing registration/session/audit tables and
+`BUSINESS_TIMEZONE` (default Asia/Kuala_Lumpur) are reused.
+
+`GET /api/v1/registrations` accepts exactly `page`, `pageSize`, `status` and
+`sort`. Pagination defaults to page 1 and 20 records; maximum page size is 100.
+Status is REGISTERED or CANCELLED; omit it to include both. Approved sort values
+are REGISTERED_AT_DESC (default), REGISTERED_AT_ASC, DATE_ASC and DATE_DESC;
+registration_id ascending breaks ties. Filters are parameterized and count/data
+use one read-only consistent snapshot. Ownership is bound to the signed-in user,
+never a client query field. Invalid, duplicate or unknown filters return 400;
+empty results and pages beyond the last match return 200 with empty items.
+
+The response is `{ items, page, pageSize, total }`. Each item has exactly 12
+fields: `registrationId`, `referenceNo`, `programId`, `programCode`, `programName`,
+`trainingDate`, `startTime`, `endTime`, `registeredAt`, `status`, `cancelledAt`
+and `cancellationReason`. No participant identity or cancellationEligible flag
+is returned. Date-only/time-only and UTC timestamp formatting reuse the shared
+response codecs. My Registrations derives browser Cancel visibility from status
+and schedule, with server eligibility remaining authoritative. The UI uses the
+500-character backend reason limit, correcting the UI document's stale 1,000
+character example and extra cancellationEligible assumption without changing
+the approved API projection.
+
+`POST /api/v1/registrations/:registrationId/cancel` accepts only optional
+`cancellationReason` (maximum 500 characters). Omitted, null or empty reason is
+stored as null. The API requires an ACTIVE PARTICIPANT session and a valid
+`X-CSRF-Token`. Existing foreign-owned registrations return 403; unknown records
+return 404; inactive registrations and attempts at/after scheduled start return
+400. Missing/expired sessions return 401; CSRF rejection returns audited 403;
+SQL/audit/configuration failures return sanitized 500.
+
+Cancellation locks participant, then program, then registration, sharing WF-009's
+lock order. Live account/session state and ownership are rechecked before any
+write. It changes only status to CANCELLED, cancellation timestamp/reason and
+updated timestamp; it retains history and releases the generated active key.
+The successful response is exactly
+`{ registrationId, referenceNo, status, cancelledAt }`. Registration update and
+REGISTRATION_CANCELLED audit commit together using the participant user actor
+and PARTICIPANT scope. Audit failure rolls back the change. No cancellation
+notification or outbox record is created. Subsequent WF-009 re-registration
+remains subject to current window, capacity and overlap rules.
+
+Program DATE/TIME schedule values are interpreted in configured BUSINESS_TIMEZONE
+and compared with the current instant using strict `now < scheduled start`.
+The shared server/browser helper avoids host-local timezone assumptions, rejects
+invalid schedules and chooses the earlier occurrence of an ambiguous DST time
+conservatively. The Malaysia deployment uses Asia/Kuala_Lumpur.
+
+The page provides status/sort filters, bounded Previous/Next, View links and a
+separate confirmation panel with an optional reason. Back closes that panel
+without submitting. Successful cancellation closes it and refreshes the list.
+Pending requests prevent repeat submissions; errors use fixed safe text and
+leave retry available. API errors use the approved 400 outcome for an ineligible
+cancellation, correcting the UI example's stale 409 mapping. These page, sorting
+and audit bindings were approved during implementation.
+
+Run `npm.cmd test` from `src`. Isolated MySQL verification uses
+`WF010_TEST_DB_HOST`, `WF010_TEST_DB_PORT`, `WF010_TEST_DB_USER`,
+`WF010_TEST_DB_PASSWORD` and a fresh `WF010_TEST_DB_NAME` matching
+`tms_wf010_<unique-name>_test`. Tests cover ownership, exact list projection,
+filter/pagination boundaries, cancellation eligibility, reason length,
+concurrent cancellation and re-registration, key/seat release, history retention,
+audit rollback and browser/timezone behavior. Test schemas are disposable;
+application data is not modified.
+
+Verification on 7 October 2026: **57 suites and 605 tests passed**, including
+live isolated MySQL WF-002 through WF-010 suites. The application database was
+not modified and no real email was sent. The disposable test container was
+removed. `git diff --check` passed.

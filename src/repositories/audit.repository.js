@@ -134,3 +134,10 @@ module.exports.createRegistrationAudit = async (connection, event) => {
     JSON.stringify({ programId: event.programId, status: 'REGISTERED' }), event.context.ipAddress || null,
     event.context.userAgent?.slice(0, 500) || null, event.context.correlationId || null]);
 };
+module.exports.createRegistrationCancelledAudit = async (connection, event) => {
+  await connection.execute(`INSERT INTO audit_records (event_timestamp,actor_user_id,actor_role,action,entity_type,entity_id,result,
+    change_summary,previous_value,new_value,access_scope,data_classification,ip_address,user_agent,correlation_id)
+    VALUES (?,?,'PARTICIPANT','REGISTRATION_CANCELLED','REGISTRATION',?,'SUCCESS','Participant registration cancelled.',?,?,'PARTICIPANT','PERSONAL_DATA',?,?,?)`,
+  [event.now,event.context.principal.userId,event.row.registration_id,JSON.stringify({status:'REGISTERED'}),JSON.stringify({status:'CANCELLED'}),
+    event.context.ipAddress || null,event.context.userAgent?.slice(0,500) || null,event.context.correlationId || null]);
+};

@@ -147,7 +147,9 @@ const enabled = process.env.WF009_TEST_DB_PORT && process.env.WF009_TEST_DB_NAME
     const { makeNotificationWorker } = require('../../src/jobs/notification-worker');
     const mail = { send: jest.fn().mockResolvedValue() };
     const repository = makeNotificationRepository({ pool });
-    const workers = [makeNotificationWorker({ repository, mail }), makeNotificationWorker({ repository, mail })];
+    // DATETIME(0) can round the committed due time up to the next second.
+    const now = () => new Date(Date.now() + 2000);
+    const workers = [makeNotificationWorker({ repository, mail, now }), makeNotificationWorker({ repository, mail, now })];
     await Promise.all(workers.map(worker => worker.runOnce()));
     expect(mail.send).toHaveBeenCalledTimes(1);
     expect((await admin.query('SELECT status FROM notification_outbox'))[0][0].status).toBe('SENT');
@@ -168,7 +170,7 @@ const enabled = process.env.WF009_TEST_DB_PORT && process.env.WF009_TEST_DB_NAME
     await register().expect(201);
     const { makeNotificationRepository } = require('../../src/repositories/registration-notification.repository');
     const { makeNotificationWorker } = require('../../src/jobs/notification-worker');
-    const repository = makeNotificationRepository({pool}); let now = new Date();
+    const repository = makeNotificationRepository({pool}); let now = new Date(Date.now() + 2000);
     const mail = {send: jest.fn().mockRejectedValue(new Error('SMTP password secret'))};
     const worker = makeNotificationWorker({repository,mail,now:()=>now});
     for (let i=0;i<4;i++) { await worker.runOnce(); now = new Date(now.getTime()+5*60000); }

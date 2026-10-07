@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="<%= csrfToken %>"><title>My Registrations</title>
+<link href="<%= bootstrapCssUrl %>" rel="stylesheet" integrity="<%= bootstrapCssIntegrity %>" crossorigin="anonymous"><link href="<%= appCssUrl %>" rel="stylesheet"></head>
+<body class="bg-light" data-workflow="WF-010" data-business-timezone="<%= businessTimezone %>" data-program-details-base-url="<%= programDetailsBaseUrl %>">
+<main class="container py-4"><h1 class="h4">My Registrations</h1><div id="pageMessage" class="alert d-none" role="alert" aria-live="polite"></div>
+<form id="registrationFilter" class="row g-3 mb-3">
+<div class="col-md-4"><label for="statusFilter" class="form-label">Status</label><select id="statusFilter" class="form-select"><option value="">All</option><option value="REGISTERED">Registered</option><option value="CANCELLED">Cancelled</option></select></div>
+<div class="col-md-4"><label for="sortFilter" class="form-label">Sort</label><select id="sortFilter" class="form-select"><% sortOptions.forEach(option => { %><option value="<%= option.value %>"><%= option.label %></option><% }); %></select></div>
+<div class="col-md-4 d-flex align-items-end"><button id="applyFilter" class="btn btn-primary w-100" type="submit">Apply</button></div></form>
+<div class="table-responsive"><table class="table"><caption>Own registration history</caption><thead><tr><th scope="col">Reference</th><th scope="col">Program</th><th scope="col">Date</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead><tbody id="registrationRows"></tbody></table></div>
+<div id="emptyState" class="alert alert-info d-none" role="status">No registrations found.</div>
+<nav class="d-flex justify-content-between mb-3" aria-label="Registration pages"><button id="previousPage" type="button" class="btn btn-outline-secondary" disabled>Previous</button><span id="pageInfo" role="status" aria-live="polite"></span><button id="nextPage" type="button" class="btn btn-outline-secondary" disabled>Next</button></nav>
+<section id="cancelPanel" class="card card-body d-none" aria-labelledby="cancelHeading"><h2 id="cancelHeading" class="h6">Confirm Cancellation</h2><p id="selectedRegistration"></p>
+<label for="cancellationReason" class="form-label">Cancellation Reason (optional)</label><textarea id="cancellationReason" class="form-control" maxlength="500"></textarea>
+<div class="mt-2 d-flex gap-2"><button id="confirmCancellation" type="button" class="btn btn-danger">Confirm Cancellation</button><button id="closeCancellation" type="button" class="btn btn-outline-secondary">Back</button></div></section>
+</main><script src="<%= businessTimeJsUrl %>" defer></script><script src="<%= myRegistrationsJsUrl %>" defer></script></body></html>
